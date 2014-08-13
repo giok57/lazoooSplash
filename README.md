@@ -63,6 +63,13 @@ need, though.
 
     ```ipkg remove nodogsplash```
 
+##2.1. Installing on a wifiLazooo router
+
+move the executable file ndsctl to /usr/bin/,
+do the same with nodogsplash file.
+
+cp resources/nodogsplash.conf /etc/nodogsplash/.
+
 ##3. How nodogsplash works
 
 A wireless router running OpenWrt has two or more interfaces; nodogsplash
