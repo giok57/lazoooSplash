@@ -163,11 +163,21 @@ http_nodogsplash_callback_index(httpd *webserver, request *r)
 void
 http_nodogsplash_first_contact(request *r)
 {
+	char *mac;
+	char *ip;
 	t_client *client;
 	t_auth_target *authtarget;
 	s_config *config;
 	char *redir, *origurl, cmd_buff[255], *data = NULL;
 	int seconds;
+
+	ip = r->clientAddr;
+
+	if (!(mac = arp_get(ip))) {
+		/* We could not get their MAC address */
+		debug(LOG_NOTICE, "Could not arp MAC address for %s", ip);
+		return;
+	}
 
 	/* only allow GET requests */
 	if (r->request.method != HTTP_GET) {
@@ -183,9 +193,10 @@ http_nodogsplash_first_contact(request *r)
 	/* We just assume protocol http; after all we caught the client by
 	   redirecting port 80 tcp packets
 	*/
-	safe_asprintf(&origurl,"http://%s%s%s%s",
+	safe_asprintf(&origurl,"http://%s%s%s%s&usermac=%s",
 				  r->request.host,r->request.path,
-				  r->request.query[0]?"?":"",r->request.query);
+				  r->request.query[0]?"?":"",r->request.query,
+				  mac);
 
 	/* Create redirect URL for this contact as appropriate */
 	redir = http_nodogsplash_make_redir(origurl);
