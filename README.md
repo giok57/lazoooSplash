@@ -1,42 +1,43 @@
-##0. The Nodogsplash project inside wifiLazooo
+##0. The LazoooSplash project inside wifiLazooo
 
-Nodogsplash offers a simple way to provide restricted access to an internet
+LazoooSplash offers a simple way to provide restricted access to an internet
 connection.
 It grants the internet connection capabilities to every wifiLazooo router!
+LazoooSplash is a Fork of nodogsplash project.
 
 ##1. Overview
 
-Nodogsplash offers a solution to this problem: You want to provide controlled
+LazoooSplash offers a solution to this problem: You want to provide controlled
 and reasonably secure public access to an internet connection; and while you
 want to require users to give some acknowledgment of the service you are
 providing, you don't need or want the complexity of user account names and
 passwords and maintaining a separate database-backed authentication server.
-When installed and running, Nodogsplash implements a simple 'authentication'
+When installed and running, LazoooSplash implements a simple 'authentication'
 protocol. First, it detects any user attempting to use your internet connection
 to request a web page. It captures the request, and instead serves back a
 'splash' web page using its own builtin web server. The splash page contains a
 link which, when the user clicks on it, opens limited access for them to the
 internet via your connection, beginning by being redirected to their originally
 requested page. This access expires after a certain time interval.
-Nodogsplash also permits limiting the aggregate bandwidth provided to users, if
+LazoooSplash also permits limiting the aggregate bandwidth provided to users, if
 you don't want to grant all of your available upload or download bandwidth.
-Specific features of Nodogsplash are configurable, by editing the configuration
+Specific features of LazoooSplash are configurable, by editing the configuration
 file and the splash page. The default installed configuration may be all you
 need, though.
 
-##2. Installing and running nodogsplash
+##2. Installing and running LazoooSplash
 
 
-* Have a router working with OpenWrt. Nodogsplash has been compiled against a
+* Have a router working with OpenWrt. LazoooSplash has been compiled against a
   OpenWrt Attitude Adjustment buildroot; it may or may not work on other versions
   of OpenWrt or on other kinds of Linux-based router firmware. For notes on
-  using Nodogsplash with OpenWrt Kamikaze, see below.
+  using LazoooSplash with OpenWrt Kamikaze, see below.
 * Make sure your router is basically working before you try to install
-  nodogsplash. In particular, make sure your DHCP daemon is serving addresses
-  on the interface that nodogsplash will manage (typically br-lan or eth1), and
+  LazoooSplash. In particular, make sure your DHCP daemon is serving addresses
+  on the interface that LazoooSplash will manage (typically br-lan or eth1), and
   for the following use ssh or telnet access to your router over a different
   interface.
-* To install nodogsplash, obtain the nodogsplash*.ipk package you want to
+* To install LazoooSplash, obtain the LazoooSplash*.ipk package you want to
   install from the project website, copy it to /tmp/ on your OpenWrt router,
   and, in as root on the router, run:
 
@@ -44,35 +45,35 @@ need, though.
 
   (Note: to prevent installation of an older package, you may have to remove
   references to remote package repositories in your ipkg.conf file)
-* If the interface that you want nodogsplash to manage is not br-lan,
+* If the interface that you want LazoooSplash to manage is not br-lan,
   edit /etc/nodogsplash/nodogsplash.conf and set GatewayInterface.
-* To start nodogsplash, run the following, or just reboot the router:
+* To start LazoooSplash, run the following, or just reboot the router:
 
-    ```/etc/init.d/nodogsplash start```
+    ```/etc/init.d/nodogsplash  start```
 
 * To test the installation, connect a client machine to the interface on your
-  router that is managed by nodogsplash (for example, connect to the router's
+  router that is managed by LazoooSplash (for example, connect to the router's
   wireless lan) and in a browser on that machine, attempt to visit any website.
-  You should see the nodogsplash splash page instead. Click on the icon; the
+  You should see the LazoooSplash splash page instead. Click on the icon; the
   browser should redirect to the initially requested website.
-* To stop nodogsplash:
+* To stop LazoooSplash:
 
-    ```/etc/init.d/nodogsplash stop```
+    ```/etc/init.d/nodogsplash  stop```
 
-* To uninstall nodogsplash:
+* To uninstall LazoooSplash:
 
-    ```ipkg remove nodogsplash```
+    ```ipkg remove LazoooSplash```
 
 ##2.1. Installing on a wifiLazooo router
 
 move the executable file ndsctl to /usr/bin/,
-do the same with nodogsplash file.
+do the same with LazoooSplash file.
 
 cp resources/nodogsplash.conf /etc/nodogsplash/.
 
-##3. How nodogsplash works
+##3. How LazoooSplash works
 
-A wireless router running OpenWrt has two or more interfaces; nodogsplash
+A wireless router running OpenWrt has two or more interfaces; LazoooSplash
 manages one of them. This will typically be br-lan, the bridge to both the
 wireless and wired LAN; or the wireless lan interface may be named something
 else if you have broken the br-lan bridge to separate the wired and wireless
@@ -80,7 +81,7 @@ LAN's.
 
 ###3.1 Packet filtering
 
-Nodogsplash considers four kinds of packets coming into the router over the
+LazoooSplash considers four kinds of packets coming into the router over the
 managed interface. Each packet is one of these kinds:
 
   1. Blocked, if the MAC mechanism is block, and the source MAC address of the
@@ -91,20 +92,20 @@ managed interface. Each packet is one of these kinds:
      TrustedMACList. By default, these packets are accepted and routed to all
      destination addresses and ports. If desired, this behavior can be
      customized by FirewallRuleSet trusted-users and FirewallRuleSet trusted-
-     users-to-router lists in the nodogsplash.conf configuration file, or by
+     users-to-router lists in the LazoooSplash.conf configuration file, or by
      the EmptyRuleSetPolicy trusted-users EmptyRuleSetPolicy trusted-users-to-
      router directives.
   3. Authenticated, if the packet's IP and MAC source addresses have gone
-     through the nodogsplash authentication process and has not yet expired.
+     through the LazoooSplash authentication process and has not yet expired.
      These packets are accepted and routed to a limited set of addresses and
      ports (see FirewallRuleSet authenticated-users and FirewallRuleSet users-
-     to-router in the nodogsplash.conf configuration file).
+     to-router in the LazoooSplash.conf configuration file).
   4. Preauthenticated. Any other packet. These packets are accepted and routed
      to a limited set of addresses and ports (see FirewallRuleSet
      preauthenticated-users and FirewallRuleSet users-to-router in the
-     nodogsplash.conf configuration file). Any other packet is dropped, except
+     LazoooSplash.conf configuration file). Any other packet is dropped, except
      that a packet for destination port 80 at any address is redirected to port
-     2050 on the router, where nodogsplash's builtin libhttpd-based web server
+     2050 on the router, where LazoooSplash's builtin libhttpd-based web server
      is listening. This begins the 'authentication' process. The server will
      serve a splash page back to the source IP address of the packet. The user
      clicking the appropriate link on the splash page will complete the
@@ -112,31 +113,31 @@ managed interface. Each packet is one of these kinds:
      Authenticated until the inactive or forced timeout is reached, and its
      packets revert to being Preauthenticated.
 
-Nodogsplash implements these actions by inserting rules in the router's
+LazoooSplash implements these actions by inserting rules in the router's
 iptables mangle PREROUTING chain to mark packets, and by inserting rules in the
 nat PREROUTING, filter INPUT and filter FORWARD chains which match on those
 marks. Because it inserts its rules at the beginning of existing chains,
-nodogsplash should be insensitive to most typical existing firewall
+LazoooSplash should be insensitive to most typical existing firewall
 configurations.
 
 ###3.2 Traffic control
 
-Nodogsplash also optionally implements basic traffic control on its managed
+LazoooSplash also optionally implements basic traffic control on its managed
 interface. This feature lets you specify the maximum aggregate upload and
 download bandwidth that can be taken by clients connected on that interface.
-Nodogsplash implements this functionality by enabling two intermediate queue
+LazoooSplash implements this functionality by enabling two intermediate queue
 devices (IMQ's), one for upload and one for download, and attaching simple
 rate-limited HTB qdiscs to them. Rules are inserted in the router's iptables
 mangle PREROUTING and POSTROUTING tables to jump to these IMQ's. The result is
 simple but effective tail-drop rate limiting (no packet classification or
 fairness queueing is done).
 
-##4. Customizing nodogsplash
+##4. Customizing LazoooSplash
 
 The default shipped configuration is intended to be usable and reasonably
 secure as-is for basic internet sharing applications, but it is customizable.
 
-* To change basic nodogsplash settings, edit the configuration file:
+* To change basic LazoooSplash settings, edit the configuration file:
 
   ```/etc/nodogsplash/nodogsplash.conf ```
 
@@ -162,22 +163,22 @@ where
 When the splash page is served, the following variables in the page are
 replaced by their values:
 
-* *$gatewayname* The value of GatewayName as set in nodogsplash.conf.
+* *$gatewayname* The value of GatewayName as set in LazoooSplash.conf.
 * *$authtarget* A URL which encodes a unique token and the URL of the user's
-  original web request. If nodogsplash receives a request at this URL, it
+  original web request. If LazoooSplash receives a request at this URL, it
   completes the authentication process for the client and replies to the
   request with a "302 Found" to the encoded originally requested
   URL. (Alternatively, you can use a GET-method HTML form to send this
-  information to the nodogsplash server; see below.) As a simple example:
+  information to the LazoooSplash server; see below.) As a simple example:
 
   ```<a href="$authtarget">Enter</a> ```
 
-* *$imagesdir* The directory in nodogsplash's web hierarchy where images to be
+* *$imagesdir* The directory in LazoooSplash's web hierarchy where images to be
   displayed in the splash page must be located.
 * *$tok*,*$redir*,*$authaction*, and *$denyaction* are also available and can be
   useful if you want to write the splash page to use a GET-method HTML form
   instead of using $authtarget as the value of an href attribute to
-  communicate with the nodogsplash server. As a simple example:
+  communicate with the LazoooSplash server. As a simple example:
 
 ```
 <form method='GET' action='$authaction'>
@@ -189,7 +190,7 @@ replaced by their values:
 ```
 
 * To change the appearance of informational and error pages which may
-  occasionally be served by nodogsplash, edit the infoskel file:
+  occasionally be served by LazoooSplash, edit the infoskel file:
 
   ```/etc/nodogsplash/htdocs/infoskel.html ```
 
@@ -202,7 +203,7 @@ error; *$content* is the content of the information or error message.
 
 ###5.1 Site-wide username and password
 
-Nodogsplash can be configured to require a username and/or password to be
+LazoooSplash can be configured to require a username and/or password to be
 entered on the splash page as part of the authentication process. Since the
 username and password are site-wide (not per user), and they are sent in the
 clear using HTTP GET, this is not a secure mechanism.
@@ -226,8 +227,8 @@ respectively, along with others as required, to the server. For example:
 
 ###5.2 Forwarding authentication
 
-Nodogsplash allows to call an external program for authentication using
-the options BinVoucher/EnablePreAuth/ForceVoucher in nodogsplash.conf.
+LazoooSplash allows to call an external program for authentication using
+the options BinVoucher/EnablePreAuth/ForceVoucher in LazoooSplash.conf.
 The given program for BinVoucher will be called using the clients MAC address as argument.
 The output is expected to be the number of seconds the client is to be authenticated.
 It may also contain the clients download and upload speed limit in KBits/s.
@@ -235,11 +236,11 @@ See the example configuration file for further details.
 
 ##6. Using ndsctl
 
-A nodogsplash install includes ndsctl, a separate application which provides
-some control over a running nodogsplash process by communicating with it over a
+A LazoooSplash install includes ndsctl, a separate application which provides
+some control over a running LazoooSplash process by communicating with it over a
 unix socket. Some command line options:
 
-* To print to stdout some information about your nodogsplash process:
+* To print to stdout some information about your LazoooSplash process:
 
     ```/usr/bin/ndsctl status```
 
@@ -270,14 +271,14 @@ unix socket. Some command line options:
 
 
 For more options, run ndsctl -h. (Note that if you want the effect of ndsctl
-commands to to persist across nodogsplash restarts, you have to edit the
+commands to to persist across LazoooSplash restarts, you have to edit the
 configuration file.)
 
-##7. Debugging nodogsplash
+##7. Debugging LazoooSplash
 
 
-* To see maximally verbose debugging output from nodogsplash, edit the
-  /etc/init.d/nodogsplash file to set the OPTIONS variable to the flags "-s -d 7",
+* To see maximally verbose debugging output from LazoooSplash, edit the
+  /etc/init.d/nodogsplash  file to set the OPTIONS variable to the flags "-s -d 7",
   restart or reboot, and view messages with logread. The -s flag logs to
   syslog; the -d 7 flag sets level 7, LOG_DEBUG, for debugging messages
   (see syslog.h). You don't want to run with these flags routinely, as it will
@@ -286,14 +287,14 @@ configuration file.)
   for routine use (this is the default). Logging level can also be set using
   ndsctl as shown above.
   Alternatively, you can set the flag -f instead of -s, and restart.
-  This will run nodogsplash in the foreground, logging to stdout.
-* When stopped, nodogsplash deletes its iptables rules, attempting to leave the
-  router's firewall in its original state. If not (for example, if nodogsplash
+  This will run LazoooSplash in the foreground, logging to stdout.
+* When stopped, LazoooSplash deletes its iptables rules, attempting to leave the
+  router's firewall in its original state. If not (for example, if LazoooSplash
   crashes instead of exiting cleanly) subsequently starting and stopping
-  nodogsplash should remove its rules.
-* Nodogsplash operates by marking packets (and, if traffic control is enabled,
+  LazoooSplash should remove its rules.
+* LazoooSplash operates by marking packets (and, if traffic control is enabled,
   passing packets through intermediate queueing devices). Most QOS packages
-  will also mark packets and use IMQ's. Therefore one or both of Nodogsplash and
+  will also mark packets and use IMQ's. Therefore one or both of LazoooSplash and
   a QOS package may malfunction if used together. Potential conflicts may be
   investigated by looking at your overall iptables setup. To check to see all
   the rules in, for example, the mangle table chains, run
@@ -305,4 +306,4 @@ configuration file.)
 
 ---
 
-Email contact: nodogsplash (at) ml.ninux.org
+Email contact: LazoooSplash (at) ml.ninux.org
