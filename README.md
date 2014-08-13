@@ -1,16 +1,8 @@
-##0. The Nodogsplash project
+##0. The Nodogsplash project inside wifiLazooo
 
 Nodogsplash offers a simple way to provide restricted access to an internet
-connection. It is derived from the codebase of the Wifi Guard Dog project.
-Nodogsplash is released under the GNU General Public License.
-
-* Nodogsplash: http://kokoro.ucsd.edu/nodogsplash
-* OpenWrt: http://openwrt.org/
-* Wifidog: http://dev.wifidog.org/
-* GNU GPL: http://www.gnu.org/copyleft/gpl.html
-
-The following describes what Nodogsplash does, how to get it and run it, and
-how to customize its behavior for your application.
+connection.
+It grants the internet connection capabilities to every wifiLazooo router!
 
 ##1. Overview
 
