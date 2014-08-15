@@ -3,7 +3,7 @@
 lazooosplash offers a simple way to provide restricted access to an internet
 connection.
 It grants the internet connection capabilities to every wifiLazooo router!
-lazooosplash is a Fork of lazooosplash project.
+lazooosplash is a Fork of nodogsplash project.
 
 ##1. Overview
 
