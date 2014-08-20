@@ -451,8 +451,10 @@ void
 http_nodogsplash_redirect_remote_auth(request *r, t_auth_target *authtarget)
 {
 	char *remoteurl;
-	char *encgateway, *encauthaction, *encredir, *enctoken;
+	char *encgateway, *encauthaction, *encredir, *enctoken, *ip, *mac;
 	s_config	*config;
+	ip = r->clientAddr;
+	mac = arp_get(ip);
 
 	config = config_get_config();
 
@@ -461,12 +463,14 @@ http_nodogsplash_redirect_remote_auth(request *r, t_auth_target *authtarget)
 	encauthaction = httpdUrlEncode(authtarget->authaction);
 	encredir = httpdUrlEncode(authtarget->redir);
 	enctoken = httpdUrlEncode(authtarget->token);
-	safe_asprintf(&remoteurl, "%s?gateway=%s&authaction=%s&redir=%s&tok=%s",
+	safe_asprintf(&remoteurl, "%s?gateway=%s&authaction=%s&redir=%s&tok=%s&ip=%s&mac=%s",
 				  config->remote_auth_action,
 				  encgateway,
 				  encauthaction,
 				  encredir,
-				  enctoken);
+				  enctoken,
+				  ip,
+				  mac);
 	http_nodogsplash_redirect(r, remoteurl);
 	free(encgateway);
 	free(encauthaction);
@@ -479,23 +483,12 @@ http_nodogsplash_redirect_remote_auth(request *r, t_auth_target *authtarget)
  * or redirect to remote authenticator as required.
  */
 void
-http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget, char *error_msg)
-{
-	char *tmpstr;
-	char line [MAX_BUF];
-	char *splashfilename;
-	FILE *fd;
-	s_config	*config;
+http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget, char *error_msg) {
 
-	config = config_get_config();
-
-	if(config->remote_auth_action) {
-		/* Redirect to remote auth server instead of serving local splash page */
-		http_nodogsplash_redirect_remote_auth(r, authtarget);
-		return;
-	}
-
-	/* Set variables; these can be interpolated in the splash page text. */
+	/* Redirect to remote auth server instead of serving local splash page */
+	http_nodogsplash_redirect_remote_auth(r, authtarget);
+/*
+	/* Set variables; these can be interpolated in the splash page text. 
 	if (error_msg)
 		httpdAddVariable(r,"error_msg", error_msg);
 	else
@@ -518,7 +511,7 @@ http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget, char *error
 	free(tmpstr);
 	/* We need to have imagesdir and pagesdir appear in the page
 	   as absolute paths, so they work no matter what the
-	   initial user request URL was  */
+	   initial user request URL was  
 	safe_asprintf(&tmpstr, "/%s", config->imagesdir);
 	httpdAddVariable(r,"imagesdir",tmpstr);
 	free(tmpstr);
@@ -527,7 +520,7 @@ http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget, char *error
 	free(tmpstr);
 
 
-	/* Pipe the splash page from its file */
+	/* Pipe the splash page from its file 
 	safe_asprintf(&splashfilename, "%s/%s", config->webroot, config->splashpage );
 	debug(LOG_INFO,"Serving splash page %s to %s",
 		  splashfilename,r->clientAddr);
@@ -543,6 +536,7 @@ http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget, char *error
 	}
 
 	free(splashfilename);
+	*/
 }
 
 /* Pipe the info page from the info skeleton page file.
