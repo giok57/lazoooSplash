@@ -69,6 +69,8 @@ static pthread_t tid_client_check = 0;
 
 /* The internal web server */
 httpd * webserver = NULL;
+/* The internal web server from HTTPS*/
+httpd * webserver_s = NULL;
 
 /* Time when nodogsplash started  */
 time_t started_time = 0;
@@ -148,6 +150,36 @@ termination_handler(int s)
 	exit(s == 0 ? 1 : 0);
 }
 
+void
+init_webserver(httpd* webserver, int port){
+
+	/* Initializes the web server */
+	if ((webserver = httpdCreate(config->gw_address, port)) == NULL) {
+		debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
+		exit(1);
+	}
+	debug(LOG_NOTICE, "Created web server on %s:%d", config->gw_address, port);
+
+	/* Set web root for server */
+	debug(LOG_DEBUG, "Setting web root: %s",config->webroot);
+	httpdSetFileBase(webserver,config->webroot);
+
+	/* Add images files to server: any file in config->imagesdir can be served */
+	debug(LOG_DEBUG, "Setting images subdir: %s",config->imagesdir);
+	httpdAddWildcardContent(webserver,config->imagesdir,NULL,config->imagesdir);
+
+	/* Add pages files to server: any file in config->pagesdir can be served */
+	debug(LOG_DEBUG, "Setting pages subdir: %s",config->pagesdir);
+	httpdAddWildcardContent(webserver,config->pagesdir,NULL,config->pagesdir);
+
+
+	debug(LOG_DEBUG, "Registering callbacks to web server");
+
+	httpdAddCContent(webserver, "/", "", 0, NULL, http_nodogsplash_callback_index);
+	httpdAddCWildcardContent(webserver, config->authdir, NULL, http_nodogsplash_callback_auth);
+	httpdAddCWildcardContent(webserver, config->denydir, NULL, http_nodogsplash_callback_deny);
+	httpdAddC404Content(webserver, http_nodogsplash_callback_404);
+}
 
 /** @internal
  * Registers all the signal handlers
@@ -203,6 +235,57 @@ init_signals(void)
 	}
 }
 
+/**
+* This is the 'run' function called by a new thread and catches all 
+* the requests made by users to port 80 (HTTP)
+*/
+void
+t_listener(void*){
+
+	wait_for_requests_loop(webserver);
+}
+
+/**
+* This is the 'run' function called by a new thread and catches all 
+* the requests made by users to port 443 (HTTPS)
+*/
+void
+t_listener_s(void*){
+
+	wait_for_requests_loop(webserver_s);
+}
+
+void
+wait_for_requests_loop(httpd* server){
+
+	while(1) {
+		r = httpdGetConnection(server, NULL);
+
+		/* We can't convert this to a switch because there might be
+		 * values that are not -1, 0 or 1. */
+		if (server->lastError == -1) {
+			/* Interrupted system call */
+			continue; /* continue loop from the top */
+		} else if (server->lastError < -1) {
+			/*
+			 * FIXME
+			 * An error occurred - should we abort?
+			 * reboot the device ?
+			 */
+			debug(LOG_ERR, "FATAL: httpdGetConnection returned unexpected value %d, exiting.", server->lastError);
+			termination_handler(0);
+		} else if (r != NULL) {
+			/* We got a connection */
+			/* put here the call to wifilazooo waiting for a new client authentication*/
+			handle_http_request(server, r);
+		} else {
+			/* webserver->lastError should be 2 */
+			/* XXX We failed an ACL.... No handling because
+			 * we don't set any... */
+		}
+	}
+}
+
 /**@internal
  * Main execution loop
  */
@@ -210,7 +293,7 @@ static void
 main_loop(void)
 {
 	int result;
-	pthread_t	tid;
+	pthread_t	tid, req_loop, req_loop_s;
 	s_config *config = config_get_config();
 	struct timespec wait_time;
 	int msec;
@@ -237,35 +320,13 @@ main_loop(void)
 		debug(LOG_NOTICE, "Detected gateway %s at %s", config->gw_interface, config->gw_address);
 	}
 
-	/* Initializes the web server */
-	if ((webserver = httpdCreate(config->gw_address, config->gw_port)) == NULL) {
-		debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
-		exit(1);
-	}
-	debug(LOG_NOTICE, "Created web server on %s:%d", config->gw_address, config->gw_port);
+	/* init web server for connections on port 80 */
+	init_webserver(webserver, config->gw_port);
+	/* init web server for connections on port 443, port is gw port + 1 same as fw_iptables on initialization */
+	init_webserver(webserver_s, config->gw_port + 1);
 
-	/* Set web root for server */
-	debug(LOG_DEBUG, "Setting web root: %s",config->webroot);
-	httpdSetFileBase(webserver,config->webroot);
-
-	/* Add images files to server: any file in config->imagesdir can be served */
-	debug(LOG_DEBUG, "Setting images subdir: %s",config->imagesdir);
-	httpdAddWildcardContent(webserver,config->imagesdir,NULL,config->imagesdir);
-
-	/* Add pages files to server: any file in config->pagesdir can be served */
-	debug(LOG_DEBUG, "Setting pages subdir: %s",config->pagesdir);
-	httpdAddWildcardContent(webserver,config->pagesdir,NULL,config->pagesdir);
-
-
-	debug(LOG_DEBUG, "Registering callbacks to web server");
-
-	httpdAddCContent(webserver, "/", "", 0, NULL, http_nodogsplash_callback_index);
-	httpdAddCWildcardContent(webserver, config->authdir, NULL, http_nodogsplash_callback_auth);
-	httpdAddCWildcardContent(webserver, config->denydir, NULL, http_nodogsplash_callback_deny);
-	httpdAddC404Content(webserver, http_nodogsplash_callback_404);
-
+	/* FIREWALL AREA */
 	/* Reset the firewall (cleans it, in case we are restarting after nodogsplash crash) */
-
 	fw_destroy();
 	/* Then initialize it */
 	debug(LOG_NOTICE, "Initializing firewall rules");
@@ -275,6 +336,7 @@ main_loop(void)
 		debug(LOG_ERR, "Exiting because of error initializing firewall rules");
 		exit(1);
 	}
+	/* END FIREWALL AREA */
 
 	/* Start client statistics and timeout clean-up thread */
 	result = pthread_create(&tid_client_check, NULL, (void *)thread_client_timeout_check, NULL);
@@ -296,32 +358,24 @@ main_loop(void)
 	 * Enter the httpd request handling loop
 	 */
 	debug(LOG_NOTICE, "Waiting for connections");
-	while(1) {
-		r = httpdGetConnection(webserver, NULL);
 
-		/* We can't convert this to a switch because there might be
-		 * values that are not -1, 0 or 1. */
-		if (webserver->lastError == -1) {
-			/* Interrupted system call */
-			continue; /* continue loop from the top */
-		} else if (webserver->lastError < -1) {
-			/*
-			 * FIXME
-			 * An error occurred - should we abort?
-			 * reboot the device ?
-			 */
-			debug(LOG_ERR, "FATAL: httpdGetConnection returned unexpected value %d, exiting.", webserver->lastError);
-			termination_handler(0);
-		} else if (r != NULL) {
-			/* We got a connection */
-			handle_http_request(webserver, r);
-		} else {
-			/* webserver->lastError should be 2 */
-			/* XXX We failed an ACL.... No handling because
-			 * we don't set any... */
-		}
+	/* Start thread that waits for connections made to port 80 */
+	result = pthread_create(&req_loop, NULL, (void *)t_listener, NULL);
+	if (result != 0) {
+		debug(LOG_ERR, "FATAL: Failed to create thread_listener_loop - exiting");
+		termination_handler(0);
 	}
+	pthread_detach(req_loop);
 
+	/* Start thread that waits for connections made to port 443 */
+	result = pthread_create(&req_loop_s, NULL, (void *)t_listener_s, NULL);
+	if (result != 0) {
+		debug(LOG_ERR, "FATAL: Failed to create thread_listener_loop_s - exiting");
+		termination_handler(0);
+	}
+	pthread_detach(req_loop_s);
+
+	}
 	/* never reached */
 }
 
