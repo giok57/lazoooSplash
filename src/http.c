@@ -193,11 +193,9 @@ http_nodogsplash_first_contact(request *r)
 	/* We just assume protocol http; after all we caught the client by
 	   redirecting port 80 tcp packets
 	*/
-	safe_asprintf(&origurl,"http://%s%s%s%s&usermac=%s",
+	safe_asprintf(&origurl,"http://%s%s%s%s",
 				  r->request.host,r->request.path,
-				  r->request.query[0]?"?":"",r->request.query,
-				  mac);
-
+				  r->request.query[0]?"?":"",r->request.query);
 	/* Create redirect URL for this contact as appropriate */
 	redir = http_nodogsplash_make_redir(origurl);
 
