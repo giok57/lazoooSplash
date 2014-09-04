@@ -20,4 +20,3 @@
 
 char    LIBHTTPD_VERSION[] =  "1.4",
         LIBHTTPD_VENDOR[] =   "WifiLazooo captive portal";
-

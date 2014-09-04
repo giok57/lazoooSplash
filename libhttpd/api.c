@@ -29,12 +29,12 @@
 #if defined(_WIN32)
 #include <winsock2.h>
 #else
-#include <unistd.h> 
+#include <unistd.h>
 #include <sys/file.h>
-#include <netinet/in.h> 
-#include <arpa/inet.h> 
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <netdb.h>
-#include <sys/socket.h> 
+#include <sys/socket.h>
 #include <netdb.h>
 #endif
 
@@ -223,7 +223,7 @@ httpd *httpdCreate(host, port)
 	** Setup the socket
 	*/
 #ifdef _WIN32
-	{ 
+	{
 	WORD 	wVersionRequested;
 	WSADATA wsaData;
 	int 	err;
@@ -231,7 +231,7 @@ httpd *httpdCreate(host, port)
 	wVersionRequested = MAKEWORD( 2, 2 );
 
 	err = WSAStartup( wVersionRequested, &wsaData );
-	
+
 	/* Found a usable winsock dll? */
 	if( err != 0 )
 	   return NULL;
@@ -591,7 +591,7 @@ int httpdReadRequest(httpd *server, request *r)
 		bzero(buf, HTTP_MAX_LEN);
 		_httpd_readBuf(r, buf, r->request.contentLength);
 		_httpd_storeData(r, buf);
-		
+
 	}
 #endif
 
@@ -1043,7 +1043,7 @@ void httpdAuthenticate(request *r, const char *realm)
 	if (r->request.authLength == 0)
 	{
 		httpdSetResponse(r, "401 Please Authenticate");
-		snprintf(buffer,sizeof(buffer), 
+		snprintf(buffer,sizeof(buffer),
 			"WWW-Authenticate: Basic realm=\"%s\"\n", realm);
 		httpdAddHeader(r, buffer);
 		httpdOutput(r,"\n");
@@ -1056,7 +1056,7 @@ void httpdForceAuthenticate(request *r, const char *realm)
 	char	buffer[255];
 
 	httpdSetResponse(r, "401 Please Authenticate");
-	snprintf(buffer,sizeof(buffer), 
+	snprintf(buffer,sizeof(buffer),
 		"WWW-Authenticate: Basic realm=\"%s\"\n", realm);
 	httpdAddHeader(r, buffer);
 	httpdOutput(r,"\n");
