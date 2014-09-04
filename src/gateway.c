@@ -256,7 +256,7 @@ t_listener_s(void){
 	wait_for_requests_loop(webserver_s);
 }
 
-void
+int
 wait_for_requests_loop(httpd* server){
 
     request *r;

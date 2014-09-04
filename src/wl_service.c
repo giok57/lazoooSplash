@@ -34,5 +34,7 @@ int wl_ap_id;
 
 void
 wl_init(void){
-
+    json_t *root;
+    json_error_t error;
+    root = json_loads("fava", 0, &error);
 }
