@@ -153,6 +153,7 @@ termination_handler(int s)
 void
 init_webserver(httpd* webserver, int port){
 
+    s_config *config = config_get_config();
 	/* Initializes the web server */
 	if ((webserver = httpdCreate(config->gw_address, port)) == NULL) {
 		debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
@@ -236,21 +237,21 @@ init_signals(void)
 }
 
 /**
-* This is the 'run' function called by a new thread and catches all 
+* This is the 'run' function called by a new thread and catches all
 * the requests made by users to port 80 (HTTP)
 */
 void
-t_listener(void*){
+t_listener(void){
 
 	wait_for_requests_loop(webserver);
 }
 
 /**
-* This is the 'run' function called by a new thread and catches all 
+* This is the 'run' function called by a new thread and catches all
 * the requests made by users to port 443 (HTTPS)
 */
 void
-t_listener_s(void*){
+t_listener_s(void){
 
 	wait_for_requests_loop(webserver_s);
 }
@@ -258,6 +259,7 @@ t_listener_s(void*){
 void
 wait_for_requests_loop(httpd* server){
 
+    request *r;
 	while(1) {
 		r = httpdGetConnection(server, NULL);
 
@@ -375,8 +377,6 @@ main_loop(void)
 	}
 	pthread_detach(req_loop_s);
 
-	}
-	/* never reached */
 }
 
 /** Main entry point for nodogsplash.
