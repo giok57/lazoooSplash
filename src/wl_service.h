@@ -25,16 +25,21 @@
 
 #ifndef _WL_SERVICE_H_
 #define _WL_SERVICE_H_
+#endif
 
 #define WL_STATUS_OK					0
 #define WL_STATUS_NO_CONNECTION			1
 #define WL_STATUS_SERVICE_UNAVAILABLE	2
 
-#define WL_URL_FORMAT   "https://wifi.lazooo.com/api/v1/ap/%s/events/"
+#define FALSE 0
+#define TRUE 1    
 
 #define BUFFER_SIZE  (256 * 1024)  /* 256 KB */
 
+#define URL_FORMAT_REGISTER   "https://wifi.lazooo.com/api/v1/ap/register/%s"
+#define URL_FORMAT_EVENTS   "https://wifi.lazooo.com/api/v1/ap/%s/events"
 #define URL_SIZE     256
+#define WAIT_SECONDS 3
 
 extern int wl_current_status;
-extern int wl_ap_id;
+extern char* wl_ap_id;

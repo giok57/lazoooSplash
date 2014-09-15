@@ -41,6 +41,9 @@
 /* for wait() */
 #include <sys/wait.h>
 
+/* for requests */
+#include <curl/curl.h>
+
 /* for unix socket communication*/
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -59,6 +62,7 @@
 #include "ndsctl_thread.h"
 #include "httpd_handler.h"
 #include "util.h"
+#include "wl_service.h"
 
 
 /** XXX Ugly hack
@@ -145,6 +149,9 @@ termination_handler(int s)
 		debug(LOG_INFO, "Explicitly killing the fw_counter thread");
 		pthread_kill(tid_client_check, SIGKILL);
 	}
+
+	/* This function releases resources acquired by curl_global_init in main(). */
+	curl_global_cleanup();
 
 	debug(LOG_NOTICE, "Exiting...");
 	exit(s == 0 ? 1 : 0);
@@ -382,8 +389,8 @@ main_loop(void)
 /** Main entry point for nodogsplash.
  * Reads the configuration file and then starts the main loop.
  */
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+
 	s_config *config = config_get_config();
 	config_init();
 
@@ -393,6 +400,12 @@ int main(int argc, char **argv)
 	debug(LOG_NOTICE,"Reading and validating configuration file %s", config->configfile);
 	config_read(config->configfile);
 	config_validate();
+
+	/* initializes the global curl environment */
+	curl_global_init(CURL_GLOBAL_ALL);
+
+	/* wifilazooo initialization */
+	wl_init();
 
 	/* Initializes the linked list of connected clients */
 	client_list_init();
