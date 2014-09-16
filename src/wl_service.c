@@ -253,7 +253,7 @@ wl_init(void) {
                     }
                 }
             }
-        }
+        }/* ap registration */
         if(wl_ap_token != NULL){
 
             debug(LOG_DEBUG, "Making a request to wifilazooo api for new events.");
@@ -280,26 +280,27 @@ wl_init(void) {
                                 mac = json_object_get(event, "mac");
                                 if(!json_is_string(mac)){
 
-                                    debug(LOG_INFO, "Cannot find mac on event");
+                                    debug(LOG_INFO, "Cannot find 'mac' on event");
                                 }
                                 type = json_object_get(event, "type");
                                 if(!json_is_integer(type)){
 
-                                    debug(LOG_INFO, "Cannot find type on event");
+                                    debug(LOG_INFO, "Cannot find 'type' on event");
                                 }
                                 if(((int)json_number_value(type)) == EVENT_CONNECT){
 
+                                    /* new Connection */
                                     debug(LOG_INFO, "Captured a new CONNECTION event");
 
                                     seconds = json_object_get(event, "seconds");
                                     if(!json_is_integer(seconds)){
 
-                                        debug(LOG_INFO, "Cannot find seconds on event");
+                                        debug(LOG_INFO, "Cannot find 'seconds' on event");
                                     }
                                     speed = json_object_get(event, "seconds");
                                     if(!json_is_integer(speed)){
 
-                                        debug(LOG_INFO, "Cannot find speed on event");
+                                        debug(LOG_INFO, "Cannot find 'speed' on event");
                                     }
                                     EVENT event_connect = {
                                                     .mac = json_string_value(mac),
@@ -310,6 +311,7 @@ wl_init(void) {
                                     manage_connect(event_connect);
                                 } else if (((int)json_number_value(type)) == EVENT_DISCONNECT){
 
+                                    /* Disconnection */
                                     debug(LOG_INFO, "Captured a new DISCONNECTION event");
 
                                     EVENT event_disconnect = {
@@ -326,6 +328,6 @@ wl_init(void) {
                     }
                 }
             }
-        }
-    }
+        }/* events polling */
+    }/* main loop */
 }
