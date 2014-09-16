@@ -37,19 +37,46 @@
 
 int wl_current_status;
 char* wl_ap_token;
+char* UUID;
+int last_req_code;
 
 
-struct write_result
-{
+struct write_result {
     char *data;
     int pos;
 };
 
+struct event {
+    char *mac;
+    int type;
+    int seconds;
+    int speed;
+};
+
+typedef struct event EVENT;
+
+
+
+/**
+* 
+* this function provides a simple way to manage a single event 
+* DISCONNECT returned by wifiLazooo service events poller.
+*/
 void
-wl_init(void){
-	
-	wl_current_status = WL_STATUS_OK;
-	wl_ap_token = NULL;
+manage_disconnect(EVENT disconnect_event) {
+
+
+}
+
+/**
+* 
+* this function provides a simple way to manage a single event 
+* CONNECT returned by wifiLazooo service events poller.
+*/
+void
+manage_connect(EVENT connect_event) {
+
+
 }
 
 static size_t 
@@ -73,8 +100,8 @@ write_response(void *ptr, size_t size, size_t nmemb, void *stream) {
 static void
 wl_offline(void) {
 
-	wl_current_status = WL_STATUS_NO_CONNECTION;
-	sleep(WAIT_SECONDS);
+    wl_current_status = WL_STATUS_NO_CONNECTION;
+    sleep(WAIT_SECONDS);
 }
 
 /**
@@ -83,11 +110,12 @@ wl_offline(void) {
 static void
 wl_down(void) {
 
-	wl_current_status = WL_STATUS_SERVICE_UNAVAILABLE;
-	sleep(WAIT_SECONDS);
+    wl_current_status = WL_STATUS_SERVICE_UNAVAILABLE;
+    sleep(WAIT_SECONDS);
 }
 
-static char *
+
+char *
 wl_request(const char *url) {
     CURL *curl = NULL;
     CURLcode status;
@@ -116,7 +144,7 @@ wl_request(const char *url) {
 
     /*######### TODO: REMEMBER --> for development use only! ########*/
     /* in a normal behaviour we need to check here the authenticity of the server */
-	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, FALSE);
 
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_response);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &write_result);
@@ -133,6 +161,7 @@ wl_request(const char *url) {
     if(code != 200)
     {
         debug(LOG_INFO, "During the request made at: %s, server returned code: %d", url, code);
+        last_req_code = code;
         wl_down();
         goto error;
     }
@@ -156,3 +185,147 @@ error:
     return NULL;
 }
 
+
+
+char *
+get_ap_UUID() {
+
+    FILE * fp;
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
+
+    fp = fopen(UUID_FILE_PATH, "r");
+    if (fp == NULL){
+
+        debug(LOG_INFO, "Cannot find UUID file located at: %s", UUID_FILE_PATH);
+        exit(1);
+    }
+    while ((read = getline(&line, &len, fp)) != -1) {
+
+        debug(LOG_INFO, "Retrieved UUID: %s", line);
+    }
+    fclose (fp);
+    return line;
+}
+
+/**
+* wifilazooo poller initializer and request loop.
+*/
+void
+wl_init(void) {
+	
+    debug(LOG_INFO, "Initializing wifiLazooo poller.");
+    size_t i;
+    wl_current_status = WL_STATUS_OK;
+	wl_ap_token = NULL;
+    char *url_events, *url_register, *text;
+    UUID = get_ap_UUID();
+    json_t *root, *data;
+    json_error_t error;
+
+    snprintf(url_register, URL_SIZE, URL_FORMAT_REGISTER, UUID);
+    
+    while(1) {
+        
+        if(wl_ap_token == NULL || last_req_code  != 200) {
+
+            wl_ap_token = NULL;
+            debug(LOG_DEBUG, "Making a request to wifilazooo api for the ap registration.");
+            text = wl_request(url_register);
+            if (text != NULL) {
+
+                root = json_loads(text, 0, &error);
+                free(text);
+                if(!root) {
+                    debug(LOG_INFO, "Error parsing wifilazooo registration response: on line %d: %s", error.line, error.text);
+                } else {
+
+                    if(!json_is_object(root)){
+                        debug(LOG_INFO, "wifiLazooo registration api returned not a json object: %s", root);
+                    }else {
+
+                        data = json_object_get(root, "ap_token");
+                        if(json_is_string(data)){
+
+                            wl_ap_token = json_string_value(data);
+                        }
+                    }
+                }
+            }
+        }
+        if(wl_ap_token != NULL){
+
+            debug(LOG_DEBUG, "Making a request to wifilazooo api for new events.");
+            snprintf(url_events, URL_SIZE, URL_FORMAT_EVENTS, wl_ap_token);
+            text = wl_request(url_events);
+            if (text != NULL) {
+
+                root = json_loads(text, 0, &error);
+                free(text);
+                if(!root) {
+                    debug(LOG_INFO, "Error parsing wifilazooo events response: on line %d: %s", error.line, error.text);
+                } else {
+
+                    data = json_object_get(root, "events");
+                    if(json_is_array(data)){
+
+                        for(i = 0; i < json_array_size(data); i++) {
+
+                            json_t *event, *mac, *seconds, *speed, *type;
+
+                            event = json_array_get(data, i);
+                            if(json_is_object(event)){
+
+                                mac = json_object_get(event, "mac");
+                                if(!json_is_string(mac)){
+
+                                    debug(LOG_INFO, "Cannot find mac on event");
+                                }
+                                type = json_object_get(event, "type");
+                                if(!json_is_integer(type)){
+
+                                    debug(LOG_INFO, "Cannot find type on event");
+                                }
+                                if(((int)json_number_value(type)) == EVENT_CONNECT){
+
+                                    debug(LOG_INFO, "Captured a new CONNECTION event");
+
+                                    seconds = json_object_get(event, "seconds");
+                                    if(!json_is_integer(seconds)){
+
+                                        debug(LOG_INFO, "Cannot find seconds on event");
+                                    }
+                                    speed = json_object_get(event, "seconds");
+                                    if(!json_is_integer(speed)){
+
+                                        debug(LOG_INFO, "Cannot find speed on event");
+                                    }
+                                    EVENT event_connect = {
+                                                    .mac = json_string_value(mac),
+                                                    .type = (int)json_number_value(type),
+                                                    .seconds = (int)json_number_value(seconds),
+                                                    .speed = (int)json_number_value(speed)
+                                                };
+                                    manage_connect(event_connect);
+                                } else if (((int)json_number_value(type)) == EVENT_DISCONNECT){
+
+                                    debug(LOG_INFO, "Captured a new DISCONNECTION event");
+
+                                    EVENT event_disconnect = {
+                                                    .mac = json_string_value(mac),
+                                                    .type = (int)json_number_value(type)
+                                                };
+                                    manage_disconnect(event_disconnect);
+                                } else {
+
+                                    debug(LOG_INFO, "Captured an UNKNOWN type event");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

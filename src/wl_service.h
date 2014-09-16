@@ -38,8 +38,13 @@
 
 #define URL_FORMAT_REGISTER   "https://wifi.lazooo.com/api/v1/ap/register/%s"
 #define URL_FORMAT_EVENTS   "https://wifi.lazooo.com/api/v1/ap/%s/events"
+#define UUID_FILE_PATH   "/etc/WL_UUID"
 #define URL_SIZE     256
 #define WAIT_SECONDS 3
 
+#define EVENT_CONNECT 123    
+#define EVENT_DISCONNECT 321
+    
 extern int wl_current_status;
 extern char* wl_ap_id;
+extern char* UUID;
