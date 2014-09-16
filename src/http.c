@@ -45,11 +45,13 @@
 #include "httpd.h"
 #include "client_list.h"
 #include "common.h"
-
+#include "wl_service.h"
 #include "util.h"
 
 
 extern pthread_mutex_t client_list_mutex;
+
+int wl_current_status;
 
 static int data_extract_bw(const char *buff, t_client *client)
 {
@@ -483,58 +485,71 @@ http_nodogsplash_redirect_remote_auth(request *r, t_auth_target *authtarget)
 void
 http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget, char *error_msg) {
 
-	/* Redirect to remote auth server instead of serving local splash page */
-	http_nodogsplash_redirect_remote_auth(r, authtarget);
-/*
-	/* Set variables; these can be interpolated in the splash page text. 
-	if (error_msg)
-		httpdAddVariable(r,"error_msg", error_msg);
-	else
-		httpdAddVariable(r,"error_msg", "");
-	httpdAddVariable(r,"gatewayname",config->gw_name);
-	httpdAddVariable(r,"tok",authtarget->token);
-	httpdAddVariable(r,"redir",authtarget->redir);
-	httpdAddVariable(r,"authaction",authtarget->authaction);
-	httpdAddVariable(r,"denyaction",authtarget->denyaction);
-	httpdAddVariable(r,"authtarget",authtarget->authtarget);
-	httpdAddVariable(r,"clientip",r->clientAddr);
-	safe_asprintf(&tmpstr, "%d", get_client_list_length());
-	httpdAddVariable(r,"nclients",tmpstr);
-	free(tmpstr);
-	safe_asprintf(&tmpstr, "%d", config->maxclients);
-	httpdAddVariable(r,"maxclients",tmpstr);
-	free(tmpstr);
-	tmpstr = get_uptime_string();
-	httpdAddVariable(r,"uptime",tmpstr);
-	free(tmpstr);
-	/* We need to have imagesdir and pagesdir appear in the page
-	   as absolute paths, so they work no matter what the
-	   initial user request URL was  
-	safe_asprintf(&tmpstr, "/%s", config->imagesdir);
-	httpdAddVariable(r,"imagesdir",tmpstr);
-	free(tmpstr);
-	safe_asprintf(&tmpstr, "/%s", config->pagesdir);
-	httpdAddVariable(r,"pagesdir",tmpstr);
-	free(tmpstr);
+	char *tmpstr;
+	char line [MAX_BUF];
+	char *splashfilename;
+	FILE *fd;
+	s_config	*config;
+	config = config_get_config();
+	if(wl_current_status == WL_STATUS_OK){
+
+		/* Redirect to remote auth server instead of serving local splash page */
+		http_nodogsplash_redirect_remote_auth(r, authtarget);
+	}else if(wl_current_status == WL_STATUS_NO_CONNECTION){
 
 
-	/* Pipe the splash page from its file 
-	safe_asprintf(&splashfilename, "%s/%s", config->webroot, config->splashpage );
-	debug(LOG_INFO,"Serving splash page %s to %s",
-		  splashfilename,r->clientAddr);
-	if (!(fd = fopen(splashfilename, "r"))) {
-		debug(LOG_ERR, "Could not open splash page file '%s'", splashfilename);
-		http_nodogsplash_serve_info(r, "Nodogsplash Error",
-									"Failed to open splash page");
-	} else {
-		while (fgets(line, MAX_BUF, fd)) {
-			httpdOutput(r,line);
+	}else if(wl_current_status == WL_STATUS_SERVICE_UNAVAILABLE){
+
+		/* Set variables; these can be interpolated in the splash page text. */
+		if (error_msg)
+			httpdAddVariable(r,"error_msg", error_msg);
+		else
+			httpdAddVariable(r,"error_msg", "");
+		httpdAddVariable(r,"gatewayname",config->gw_name);
+		httpdAddVariable(r,"tok",authtarget->token);
+		httpdAddVariable(r,"redir",authtarget->redir);
+		httpdAddVariable(r,"authaction",authtarget->authaction);
+		httpdAddVariable(r,"denyaction",authtarget->denyaction);
+		httpdAddVariable(r,"authtarget",authtarget->authtarget);
+		httpdAddVariable(r,"clientip",r->clientAddr);
+		safe_asprintf(&tmpstr, "%d", get_client_list_length());
+		httpdAddVariable(r,"nclients",tmpstr);
+		free(tmpstr);
+		safe_asprintf(&tmpstr, "%d", config->maxclients);
+		httpdAddVariable(r,"maxclients",tmpstr);
+		free(tmpstr);
+		tmpstr = get_uptime_string();
+		httpdAddVariable(r,"uptime",tmpstr);
+		free(tmpstr);
+		/* We need to have imagesdir and pagesdir appear in the page
+		   as absolute paths, so they work no matter what the
+		   initial user request URL was  */
+		safe_asprintf(&tmpstr, "/%s", config->imagesdir);
+		httpdAddVariable(r,"imagesdir",tmpstr);
+		free(tmpstr);
+		safe_asprintf(&tmpstr, "/%s", config->pagesdir);
+		httpdAddVariable(r,"pagesdir",tmpstr);
+		free(tmpstr);
+
+
+		/* Pipe the splash page from its file */
+		safe_asprintf(&splashfilename, "%s/%s", config->webroot, config->splashpage );
+		debug(LOG_INFO,"Serving splash page %s to %s",
+			  splashfilename,r->clientAddr);
+		if (!(fd = fopen(splashfilename, "r"))) {
+			debug(LOG_ERR, "Could not open splash page file '%s'", splashfilename);
+			http_nodogsplash_serve_info(r, "Nodogsplash Error",
+										"Failed to open splash page");
+		} else {
+			while (fgets(line, MAX_BUF, fd)) {
+				httpdOutput(r,line);
+			}
+			fclose(fd);
 		}
-		fclose(fd);
-	}
 
-	free(splashfilename);
-	*/
+		free(splashfilename);
+	}
+	
 }
 
 /* Pipe the info page from the info skeleton page file.

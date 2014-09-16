@@ -77,7 +77,7 @@ manage_disconnect(EVENT disconnect_event) {
 void
 manage_connect(EVENT connect_event) {
 
-
+    
 }
 
 static size_t 
