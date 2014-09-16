@@ -33,6 +33,7 @@
 
 #include "debug.h"
 #include "wl_service.h"
+#include "gateway.h"
 
 
 int wl_current_status;
@@ -199,7 +200,7 @@ get_ap_UUID() {
     if (fp == NULL){
 
         debug(LOG_INFO, "Cannot find UUID file located at: %s", UUID_FILE_PATH);
-        exit(1);
+        termination_handler(0);
     }
     while ((read = getline(&line, &len, fp)) != -1) {
 
@@ -221,7 +222,7 @@ wl_init(void) {
 	wl_ap_token = NULL;
     char *url_events, *url_register, *text;
     UUID = get_ap_UUID();
-    json_t *root, *data;
+    json_t *root, *data, *event, *mac, *seconds, *speed, *type;
     json_error_t error;
 
     snprintf(url_register, URL_SIZE, URL_FORMAT_REGISTER, UUID);
@@ -271,8 +272,6 @@ wl_init(void) {
                     if(json_is_array(data)){
 
                         for(i = 0; i < json_array_size(data); i++) {
-
-                            json_t *event, *mac, *seconds, *speed, *type;
 
                             event = json_array_get(data, i);
                             if(json_is_object(event)){

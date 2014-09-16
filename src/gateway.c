@@ -263,6 +263,13 @@ t_listener_s(void){
 	wait_for_requests_loop(webserver_s);
 }
 
+void
+init_wl_service(void){
+
+	/* wifilazooo initialization */
+	wl_init();
+}
+
 int
 wait_for_requests_loop(httpd* server){
 
@@ -302,7 +309,7 @@ static void
 main_loop(void)
 {
 	int result;
-	pthread_t	tid, req_loop, req_loop_s;
+	pthread_t	tid, req_loop, req_loop_s, wl_service;
 	s_config *config = config_get_config();
 	struct timespec wait_time;
 	int msec;
@@ -363,6 +370,14 @@ main_loop(void)
 	}
 	pthread_detach(tid);
 
+	/* Start thread that waits for wifiLazooo events */
+	result = pthread_create(&wl_service, NULL, (void *)init_wl_service, NULL);
+	if (result != 0) {
+		debug(LOG_ERR, "FATAL: Failed to create thread for wl_service - exiting");
+		termination_handler(0);
+	}
+	pthread_detach(wl_service);
+
 	/*
 	 * Enter the httpd request handling loop
 	 */
@@ -403,9 +418,6 @@ int main(int argc, char **argv) {
 
 	/* initializes the global curl environment */
 	curl_global_init(CURL_GLOBAL_ALL);
-
-	/* wifilazooo initialization */
-	wl_init();
 
 	/* Initializes the linked list of connected clients */
 	client_list_init();
