@@ -31,6 +31,9 @@
 #include <jansson.h>
 #include <curl/curl.h>
 
+#include "client_list.h"
+#include "auth.h"
+#include "safe.h"
 #include "debug.h"
 #include "wl_service.h"
 #include "gateway.h"
@@ -40,6 +43,10 @@ int wl_current_status;
 char* wl_ap_token;
 char* UUID;
 int last_req_code;
+
+/* Defined in clientlist.c */
+extern  pthread_mutex_t client_list_mutex;
+extern  pthread_mutex_t config_mutex;
 
 
 struct write_result {
@@ -66,7 +73,21 @@ typedef struct event EVENT;
 void
 manage_disconnect(EVENT disconnect_event) {
 
+    t_client *client;
+    char *ip;
+    debug(LOG_DEBUG, "Entering manage_disconnect on wl_service");
+    LOCK_CLIENT_LIST();
+    if ((client = client_list_find_by_mac(disconnect_event.mac)) != NULL) {
 
+        ip = safe_strdup(client->ip);
+        UNLOCK_CLIENT_LIST();
+        auth_client_action(ip, disconnect_event.mac, AUTH_MAKE_DEAUTHENTICATED);
+    } else {
+
+        debug(LOG_DEBUG, "Cannot disconnect mac: %s because is no more on client list", disconnect_event.mac);
+        UNLOCK_CLIENT_LIST();
+    }
+    free(ip);
 }
 
 /**
@@ -77,7 +98,21 @@ manage_disconnect(EVENT disconnect_event) {
 void
 manage_connect(EVENT connect_event) {
 
-    
+    t_client *client;
+    char *ip;
+    debug(LOG_DEBUG, "Entering manage_connect on wl_service");
+    LOCK_CLIENT_LIST();
+    if ((client = client_list_find_by_mac(connect_event.mac)) != NULL) {
+
+        ip = safe_strdup(client->ip);
+        UNLOCK_CLIENT_LIST();
+        auth_client_action(ip, connect_event.mac, AUTH_MAKE_AUTHENTICATED);
+    } else {
+
+        debug(LOG_DEBUG, "Cannot connect mac: %s because is no more on client list", connect_event.mac);
+        UNLOCK_CLIENT_LIST();
+    }
+    free(ip);
 }
 
 static size_t 
@@ -328,5 +363,10 @@ wl_init(void) {
                 }
             }
         }/* events polling */
+        else{
+            /* doesn't have a valid wl_ap_token so wait */
+            debug(LOG_INFO, "Cannot wait for wifiLazooo events because wl_ap_token is not valid!");
+            sleep(WAIT_SECONDS);
+        }
     }/* main loop */
 }
