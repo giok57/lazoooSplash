@@ -66,8 +66,8 @@ typedef struct event EVENT;
 
 
 /**
-* 
-* this function provides a simple way to manage a single event 
+*
+* this function provides a simple way to manage a single event
 * DISCONNECT returned by wifiLazooo service events poller.
 */
 void
@@ -91,8 +91,8 @@ manage_disconnect(EVENT disconnect_event) {
 }
 
 /**
-* 
-* this function provides a simple way to manage a single event 
+*
+* this function provides a simple way to manage a single event
 * CONNECT returned by wifiLazooo service events poller.
 */
 void
@@ -115,7 +115,7 @@ manage_connect(EVENT connect_event) {
     free(ip);
 }
 
-static size_t 
+static size_t
 write_response(void *ptr, size_t size, size_t nmemb, void *stream) {
     struct write_result *result = (struct write_result *)stream;
 
@@ -130,7 +130,7 @@ write_response(void *ptr, size_t size, size_t nmemb, void *stream) {
     return size * nmemb;
 }
 
-/** 
+/**
 * the router is currently offline, No network
 **/
 static void
@@ -196,7 +196,7 @@ wl_request(const char *url) {
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
     if(code != 200)
     {
-        debug(LOG_INFO, "During the request made at: %s, server returned code: %d", url, code);
+        debug(LOG_DEBUG, "During the request made at: %s, server returned code: %d", url, code);
         last_req_code = code;
         wl_down();
         goto error;
@@ -234,12 +234,12 @@ get_ap_UUID() {
     fp = fopen(UUID_FILE_PATH, "r");
     if (fp == NULL){
 
-        debug(LOG_INFO, "Cannot find UUID file located at: %s", UUID_FILE_PATH);
+        debug(LOG_DEBUG, "Cannot find UUID file located at: %s", UUID_FILE_PATH);
         termination_handler(0);
     }
     while ((read = getline(&line, &len, fp)) != -1) {
 
-        debug(LOG_INFO, "Retrieved UUID: %s", line);
+        debug(LOG_DEBUG, "Retrieved UUID: %s", line);
     }
     fclose (fp);
     return line;
@@ -250,8 +250,8 @@ get_ap_UUID() {
 */
 void
 wl_init(void) {
-	
-    debug(LOG_INFO, "Initializing wifiLazooo poller.");
+
+    debug(LOG_DEBUG, "Initializing wifiLazooo poller.");
     size_t i;
     wl_current_status = WL_STATUS_OK;
 	wl_ap_token = NULL;
@@ -261,9 +261,9 @@ wl_init(void) {
     json_error_t error;
 
     snprintf(url_register, URL_SIZE, URL_FORMAT_REGISTER, UUID);
-    
+
     while(1) {
-        
+
         if(wl_ap_token == NULL || last_req_code  != 200) {
 
             wl_ap_token = NULL;
@@ -274,11 +274,11 @@ wl_init(void) {
                 root = json_loads(text, 0, &error);
                 free(text);
                 if(!root) {
-                    debug(LOG_INFO, "Error parsing wifilazooo registration response: on line %d: %s", error.line, error.text);
+                    debug(LOG_DEBUG, "Error parsing wifilazooo registration response: on line %d: %s", error.line, error.text);
                 } else {
 
                     if(!json_is_object(root)){
-                        debug(LOG_INFO, "wifiLazooo registration api returned not a json object: %s", root);
+                        debug(LOG_DEBUG, "wifiLazooo registration api returned not a json object: %s", root);
                     }else {
 
                         data = json_object_get(root, "ap_token");
@@ -300,7 +300,7 @@ wl_init(void) {
                 root = json_loads(text, 0, &error);
                 free(text);
                 if(!root) {
-                    debug(LOG_INFO, "Error parsing wifilazooo events response: on line %d: %s", error.line, error.text);
+                    debug(LOG_DEBUG, "Error parsing wifilazooo events response: on line %d: %s", error.line, error.text);
                 } else {
 
                     data = json_object_get(root, "events");
@@ -314,27 +314,27 @@ wl_init(void) {
                                 mac = json_object_get(event, "mac");
                                 if(!json_is_string(mac)){
 
-                                    debug(LOG_INFO, "Cannot find 'mac' on event");
+                                    debug(LOG_DEBUG, "Cannot find 'mac' on event");
                                 }
                                 type = json_object_get(event, "type");
                                 if(!json_is_integer(type)){
 
-                                    debug(LOG_INFO, "Cannot find 'type' on event");
+                                    debug(LOG_DEBUG, "Cannot find 'type' on event");
                                 }
                                 if(((int)json_number_value(type)) == EVENT_CONNECT){
 
                                     /* new Connection */
-                                    debug(LOG_INFO, "Captured a new CONNECTION event");
+                                    debug(LOG_DEBUG, "Captured a new CONNECTION event");
 
                                     seconds = json_object_get(event, "seconds");
                                     if(!json_is_integer(seconds)){
 
-                                        debug(LOG_INFO, "Cannot find 'seconds' on event");
+                                        debug(LOG_DEBUG, "Cannot find 'seconds' on event");
                                     }
                                     speed = json_object_get(event, "seconds");
                                     if(!json_is_integer(speed)){
 
-                                        debug(LOG_INFO, "Cannot find 'speed' on event");
+                                        debug(LOG_DEBUG, "Cannot find 'speed' on event");
                                     }
                                     EVENT event_connect = {
                                                     .mac = json_string_value(mac),
@@ -346,7 +346,7 @@ wl_init(void) {
                                 } else if (((int)json_number_value(type)) == EVENT_DISCONNECT){
 
                                     /* Disconnection */
-                                    debug(LOG_INFO, "Captured a new DISCONNECTION event");
+                                    debug(LOG_DEBUG, "Captured a new DISCONNECTION event");
 
                                     EVENT event_disconnect = {
                                                     .mac = json_string_value(mac),
@@ -355,7 +355,7 @@ wl_init(void) {
                                     manage_disconnect(event_disconnect);
                                 } else {
 
-                                    debug(LOG_INFO, "Captured an UNKNOWN type event");
+                                    debug(LOG_DEBUG, "Captured an UNKNOWN type event");
                                 }
                             }
                         }
@@ -365,7 +365,7 @@ wl_init(void) {
         }/* events polling */
         else{
             /* doesn't have a valid wl_ap_token so wait */
-            debug(LOG_INFO, "Cannot wait for wifiLazooo events because wl_ap_token is not valid!");
+            debug(LOG_DEBUG, "Cannot wait for wifiLazooo events because wl_ap_token is not valid!");
             sleep(WAIT_SECONDS);
         }
     }/* main loop */

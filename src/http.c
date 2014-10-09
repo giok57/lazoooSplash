@@ -463,7 +463,7 @@ http_nodogsplash_redirect_remote_auth(request *r, t_auth_target *authtarget)
 	encauthaction = httpdUrlEncode(authtarget->authaction);
 	encredir = httpdUrlEncode(authtarget->redir);
 	enctoken = httpdUrlEncode(authtarget->token);
-	safe_asprintf(&remoteurl, "%s?gateway=%s&authaction=%s&redir=%s&tok=%s&ip=%s&mac=%s",
+	safe_asprintf(&remoteurl, "%s/connect?gateway=%s&authaction=%s&redir=%s&tok=%s&ip=%s&mac=%s",
 				  config->remote_auth_action,
 				  encgateway,
 				  encauthaction,
@@ -549,7 +549,7 @@ http_nodogsplash_serve_splash(request *r, t_auth_target *authtarget, char *error
 
 		free(splashfilename);
 	}
-	
+
 }
 
 /* Pipe the info page from the info skeleton page file.
