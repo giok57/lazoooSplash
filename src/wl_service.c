@@ -30,6 +30,7 @@
 
 #include <jansson.h>
 #include <curl/curl.h>
+#include <microhttpd.h>
 
 #include "client_list.h"
 #include "auth.h"
