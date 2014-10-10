@@ -370,7 +370,13 @@ main_loop(void)
 	}
 	pthread_detach(tid);
 
-
+	/* Start thread that waits for wifiLazooo events */
+	result = pthread_create(&wl_service, NULL, (void *)init_wl_service, NULL);
+	if (result != 0) {
+		debug(LOG_ERR, "FATAL: Failed to create thread for wl_service - exiting");
+		termination_handler(0);
+	}
+	pthread_detach(wl_service);
 
 	/*
 	 * Enter the httpd request handling loop
