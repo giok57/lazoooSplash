@@ -52,6 +52,10 @@ typedef struct _auth_target_t {
 	char *info;			/**< @brief Auxilliary info */
 } t_auth_target;
 
+
+static int on_client_connect (void *cls, const struct sockaddr *addr, socklen_t addrlen);
+
+
 /**@brief Callback for libhttpd, serves nodogsplash splash page */
 void http_nodogsplash_callback_404(httpd *webserver, request *r);
 /**@brief Callback for libhttpd, serves nodogsplash splash page */

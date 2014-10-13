@@ -51,6 +51,8 @@
 
 extern pthread_mutex_t client_list_mutex;
 
+
+
 static int data_extract_bw(const char *buff, t_client *client)
 {
 	int seconds = 0;
@@ -156,6 +158,34 @@ http_nodogsplash_callback_index(httpd *webserver, request *r)
 
 	http_nodogsplash_first_contact(r);
 }
+
+static int on_client_connect (void *cls, const struct sockaddr *addr, socklen_t addrlen) {
+
+    char *mac;
+	t_client *client;
+	t_auth_target *authtarget;
+	s_config *config;
+	char *redir, *origurl, cmd_buff[255], *data = NULL;
+	sockaddr_in *addr_in = (sockaddr_in *) &addr;
+	char ip[INET_ADDRSTRLEN];
+	inet_ntop(AF_INET, &(addr_in -> sin_addr), ip, INET_ADDRSTRLEN);
+
+	if (!(mac = arp_get(ip))) {
+		/* We could not get their MAC address */
+		debug(LOG_NOTICE, "Could not arp MAC address for %s", ip);
+		return;
+	}
+	config = config_get_config();
+
+	LOCK_CLIENT_LIST();
+	client = client_list_add_client(r->clientAddr);
+	UNLOCK_CLIENT_LIST();
+
+	redir = "https://wifi.lazooo.com/navigate";
+	authtarget = http_nodogsplash_make_authtarget(client->token,redir);
+	return MHD_YES;	
+}
+
 
 /** Respond to attempted access from a preauthenticated client.
  *  Add the client to the client list and serves the splash page.

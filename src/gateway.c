@@ -34,6 +34,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <time.h>
+#include <unistd.h>
 
 /* for strerror() */
 #include <string.h>
@@ -44,6 +45,11 @@
 /* for unix socket communication*/
 #include <sys/socket.h>
 #include <sys/un.h>
+
+#include <sys/types.h>
+#include <sys/select.h>
+#include <string.h>
+#include <microhttpd.h>
 
 #include "common.h"
 #include "httpd.h"
@@ -217,6 +223,10 @@ main_loop(void)
 	request *r;
 	void **params;
 	int* thread_serial_num_p;
+	struct MHD_Daemon *daemon;
+	struct MHD_Daemon *ssl_daemon;
+  	char *key_pem;
+  	char *cert_pem;
 
 	/* Set the time when nodogsplash started */
 	if (!started_time) {
@@ -236,33 +246,6 @@ main_loop(void)
 		}
 		debug(LOG_NOTICE, "Detected gateway %s at %s", config->gw_interface, config->gw_address);
 	}
-
-	/* Initializes the web server */
-	if ((webserver = httpdCreate(config->gw_address, config->gw_port)) == NULL) {
-		debug(LOG_ERR, "Could not create web server: %s", strerror(errno));
-		exit(1);
-	}
-	debug(LOG_NOTICE, "Created web server on %s:%d", config->gw_address, config->gw_port);
-
-	/* Set web root for server */
-	debug(LOG_DEBUG, "Setting web root: %s",config->webroot);
-	httpdSetFileBase(webserver,config->webroot);
-
-	/* Add images files to server: any file in config->imagesdir can be served */
-	debug(LOG_DEBUG, "Setting images subdir: %s",config->imagesdir);
-	httpdAddWildcardContent(webserver,config->imagesdir,NULL,config->imagesdir);
-
-	/* Add pages files to server: any file in config->pagesdir can be served */
-	debug(LOG_DEBUG, "Setting pages subdir: %s",config->pagesdir);
-	httpdAddWildcardContent(webserver,config->pagesdir,NULL,config->pagesdir);
-
-
-	debug(LOG_DEBUG, "Registering callbacks to web server");
-
-	httpdAddCContent(webserver, "/", "", 0, NULL, http_nodogsplash_callback_index);
-	httpdAddCWildcardContent(webserver, config->authdir, NULL, http_nodogsplash_callback_auth);
-	httpdAddCWildcardContent(webserver, config->denydir, NULL, http_nodogsplash_callback_deny);
-	httpdAddC404Content(webserver, http_nodogsplash_callback_404);
 
 	/* Reset the firewall (cleans it, in case we are restarting after nodogsplash crash) */
 
@@ -292,37 +275,34 @@ main_loop(void)
 	}
 	pthread_detach(tid);
 
-	/*
-	 * Enter the httpd request handling loop
-	 */
-	debug(LOG_NOTICE, "Waiting for connections");
-	while(1) {
-		r = httpdGetConnection(webserver, NULL);
+	/* starts the server */
+	key_pem = load_file (SERVERKEYFILE);
+	cert_pem = load_file (SERVERCERTFILE);
 
-		/* We can't convert this to a switch because there might be
-		 * values that are not -1, 0 or 1. */
-		if (webserver->lastError == -1) {
-			/* Interrupted system call */
-			continue; /* continue loop from the top */
-		} else if (webserver->lastError < -1) {
-			/*
-			 * FIXME
-			 * An error occurred - should we abort?
-			 * reboot the device ?
-			 */
-			debug(LOG_ERR, "FATAL: httpdGetConnection returned unexpected value %d, exiting.", webserver->lastError);
-			termination_handler(0);
-		} else if (r != NULL) {
-			/* We got a connection */
-			handle_http_request(webserver, r);
-		} else {
-			/* webserver->lastError should be 2 */
-			/* XXX We failed an ACL.... No handling because
-			 * we don't set any... */
-		}
+	if ((key_pem == NULL) || (cert_pem == NULL))
+	{
+	  debug(LOG_ERR, "The key/certificate files could not be read.");
+	  termination_handler(0);
 	}
 
-	/* never reached */
+	ssl_daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL, SSL_PORT, &on_client_connect,
+	                  NULL, &answer_to_connection, NULL,
+	                  MHD_OPTION_HTTPS_MEM_KEY, key_pem,
+	                  MHD_OPTION_HTTPS_MEM_CERT, cert_pem, MHD_OPTION_END);
+
+	daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, PORT, &on_client_connect,
+	                  NULL, &answer_to_connection, NULL, MHD_OPTION_END);
+
+	if (NULL == daemon || NULL ==ssl_daemon) {
+	  debug(LOG_ERR, "FATAL: Failed to create the server daemon");
+		
+	  free (key_pem);
+	  free (cert_pem);
+
+	  termination_handler(0);
+	}
+	debug(LOG_NOTICE, "Microhttpd started, pausing main thread");
+	pause();
 }
 
 /** Main entry point for nodogsplash.

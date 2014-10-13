@@ -32,6 +32,9 @@
 
 /** @brief exits cleanly and clear the firewall rules. */
 void termination_handler(int s);
-
+#define SSL_PORT 8443
+#define PORT 8888
+#define SERVERKEYFILE "/etc/nodogsplash/server.key"
+#define SERVERCERTFILE "/etc/nodogsplash/server.crt"
 
 #endif /* _GATEWAY_H_ */
