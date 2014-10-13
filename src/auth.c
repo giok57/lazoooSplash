@@ -47,7 +47,6 @@
 #include "client_list.h"
 #include "util.h"
 
-
 /* Defined in clientlist.c */
 extern	pthread_mutex_t	client_list_mutex;
 

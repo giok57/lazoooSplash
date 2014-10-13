@@ -34,6 +34,12 @@
 #include <unistd.h>
 #include <syslog.h>
 
+#include <sys/types.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <microhttpd.h>
+#include <arpa/inet.h>
+
 #include "httpd.h"
 
 #include "safe.h"
@@ -51,6 +57,12 @@
 
 extern pthread_mutex_t client_list_mutex;
 
+typedef struct {
+   short sin_family;
+   unsigned short sin_port;
+   struct in_addr sin_addr;
+   char sin_zero[8];
+} sockaddr_in;
 
 
 static int data_extract_bw(const char *buff, t_client *client)
@@ -173,17 +185,25 @@ static int on_client_connect (void *cls, const struct sockaddr *addr, socklen_t 
 	if (!(mac = arp_get(ip))) {
 		/* We could not get their MAC address */
 		debug(LOG_NOTICE, "Could not arp MAC address for %s", ip);
-		return;
+		return MHD_NO;
 	}
 	config = config_get_config();
 
 	LOCK_CLIENT_LIST();
-	client = client_list_add_client(r->clientAddr);
+	client = client_list_add_client(ip);
 	UNLOCK_CLIENT_LIST();
 
 	redir = "https://wifi.lazooo.com/navigate";
 	authtarget = http_nodogsplash_make_authtarget(client->token,redir);
 	return MHD_YES;	
+}
+
+static int answer_to_connection (void *cls, struct MHD_Connection *connection,
+                      const char *url, const char *method,
+                      const char *version, const char *upload_data,
+                      size_t *upload_data_size, void **con_cls) {
+  
+  return MHD_NO;
 }
 
 
