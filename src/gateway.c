@@ -341,7 +341,7 @@ main_loop(void)
 	daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, PORT, &on_client_connect,
 	                  NULL, &answer_to_connection, NULL, MHD_OPTION_END);
 
-	if (NULL == daemon || NULL ==ssl_daemon) {
+	if (NULL == daemon ) {
 	  debug(LOG_ERR, "FATAL: Failed to create the server daemon");
 		
 	  free (key_pem);
