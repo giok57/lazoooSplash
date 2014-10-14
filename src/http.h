@@ -31,6 +31,7 @@
 #include "auth.h"
 #include "httpd.h"
 #include "client_list.h"
+#include <sys/socket.h>
 
 
 /**
@@ -53,8 +54,8 @@ typedef struct _auth_target_t {
 } t_auth_target;
 
 
-static int on_client_connect (void *cls, const struct sockaddr *addr, socklen_t addrlen);
-static int answer_to_connection (void *cls, struct MHD_Connection *connection,
+int on_client_connect (void *cls, const struct sockaddr *addr, socklen_t addrlen);
+int answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
                       const char *version, const char *upload_data,
                       size_t *upload_data_size, void **con_cls);

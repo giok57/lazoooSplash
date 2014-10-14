@@ -171,13 +171,29 @@ http_nodogsplash_callback_index(httpd *webserver, request *r)
 	http_nodogsplash_first_contact(r);
 }
 
-static int on_client_connect (void *cls, const struct sockaddr *addr, socklen_t addrlen) {
+static int return_page (struct MHD_Connection *connection, char *url) {
+	int ret;
+	struct MHD_Response *response;
+	const char *page;
+	safe_asprintf(&page,  "<html><body>Redirecting to %s.</body></html>", url);
+	response = MHD_create_response_from_buffer (strlen (page), (void *) page, MHD_RESPMEM_PERSISTENT);
+	if (!response)
+		return MHD_NO;
 
-    char *mac;
+	MHD_add_response_header (response, "Location", url);
+	ret = MHD_queue_response (connection, 301, response);
+	MHD_destroy_response (response);
+
+	return ret;
+}
+
+int on_client_connect (void *cls, const struct sockaddr *addr, socklen_t addrlen) {
+
+    char *mac, *url;
 	t_client *client;
 	t_auth_target *authtarget;
 	s_config *config;
-	char *redir, *origurl, cmd_buff[255], *data = NULL;
+	char *redir, cmd_buff[255];
 	sockaddr_in *addr_in = (sockaddr_in *) &addr;
 	char ip[INET_ADDRSTRLEN];
 	inet_ntop(AF_INET, &(addr_in -> sin_addr), ip, INET_ADDRSTRLEN);
@@ -193,17 +209,19 @@ static int on_client_connect (void *cls, const struct sockaddr *addr, socklen_t 
 	client = client_list_add_client(ip);
 	UNLOCK_CLIENT_LIST();
 
+	safe_asprintf(&url,  "https://wifi.lazooo.com/connect?token=%s", client->token);
 	redir = "https://wifi.lazooo.com/navigate";
-	authtarget = http_nodogsplash_make_authtarget(client->token,redir);
+	authtarget = http_nodogsplash_make_authtarget(client->token, redir);
 	return MHD_YES;	
 }
 
-static int answer_to_connection (void *cls, struct MHD_Connection *connection,
+int answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
                       const char *version, const char *upload_data,
                       size_t *upload_data_size, void **con_cls) {
   
-  return MHD_NO;
+  //client_list_find_by_ip(const char *ip);
+  return return_page(connection, "http://pandrone.com/?token=test");
 }
 
 
@@ -291,8 +309,7 @@ serve_splash:
 void
 http_nodogsplash_callback_action(request *r,
 								 t_auth_target *authtarget,
-								 t_authaction action)
-{
+								 t_authaction action) {
 	t_client	*client;
 	char *mac;
 	char *ip;

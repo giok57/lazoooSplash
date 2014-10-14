@@ -256,6 +256,7 @@ init_signals(void)
 	}
 }
 
+
 /**@internal
  * Main execution loop
  */
