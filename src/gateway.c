@@ -338,7 +338,7 @@ main_loop(void)
 	                  MHD_OPTION_HTTPS_MEM_KEY, key_pem,
 	                  MHD_OPTION_HTTPS_MEM_CERT, cert_pem, MHD_OPTION_END);
 
-	daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, PORT, &on_client_connect,
+	daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, config->gw_port, &on_client_connect,
 	                  NULL, &answer_to_connection, NULL, MHD_OPTION_END);
 
 	if (NULL == daemon ) {
