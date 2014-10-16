@@ -461,6 +461,7 @@ iptables_fw_init(void)
 
 	/* packets coming in on gw_interface jump to CHAIN_TO_ROUTER */
 	rc |= iptables_do_command("-t filter -I INPUT -i %s -s %s -j " CHAIN_TO_ROUTER, gw_interface, gw_iprange);
+	rc |= iptables_do_command("-t filter -I INPUT -i %s -s %s -j " CHAIN_TO_ROUTER, "lo", "127.0.0.1");
 	/* CHAIN_TO_ROUTER packets marked BLOCKED  DROP */
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -m mark --mark 0x%x%s -j DROP", FW_MARK_BLOCKED, markmask);
 	/* CHAIN_TO_ROUTER, invalid packets  DROP */
@@ -472,6 +473,8 @@ iptables_fw_init(void)
 
 	/* CHAIN_TO_ROUTER, packets to HTTP listening on gw_port on router ACCEPT */
 	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport %d -j ACCEPT", gw_port);
+	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport %d -j ACCEPT", 8443);
+	rc |= iptables_do_command("-t filter -A " CHAIN_TO_ROUTER " -p tcp --dport %d -j ACCEPT", 8888);
 
 	/* CHAIN_TO_ROUTER, packets marked TRUSTED: */
 
