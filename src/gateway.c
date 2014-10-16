@@ -323,30 +323,12 @@ main_loop(void)
 	}
 	pthread_detach(tid);
 
-	/* starts the server */
-	key_pem = load_file (SERVERKEYFILE);
-	cert_pem = load_file (SERVERCERTFILE);
-
-	if ((key_pem == NULL) || (cert_pem == NULL))
-	{
-	  debug(LOG_ERR, "The key/certificate files could not be read.");
-	  termination_handler(0);
-	}
-
-	ssl_daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY | MHD_USE_SSL, SSL_PORT, &on_client_connect,
-	                  NULL, &answer_to_connection, NULL,
-	                  MHD_OPTION_HTTPS_MEM_KEY, key_pem,
-	                  MHD_OPTION_HTTPS_MEM_CERT, cert_pem, MHD_OPTION_END);
-
 	daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, config->gw_port, &on_client_connect,
 	                  NULL, &answer_to_connection, NULL, MHD_OPTION_END);
 
 	if (NULL == daemon ) {
 	  debug(LOG_ERR, "FATAL: Failed to create the server daemon");
 		
-	  free (key_pem);
-	  free (cert_pem);
-
 	  termination_handler(0);
 	}
 	debug(LOG_NOTICE, "Microhttpd started, pausing main thread");

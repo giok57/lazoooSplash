@@ -188,7 +188,7 @@ static int return_page (struct MHD_Connection *connection, char *url) {
 }
 
 int on_client_connect (void *cls, const struct sockaddr *addr, socklen_t addrlen) {
-
+/*
     char *mac, *url;
 	t_client *client;
 	t_auth_target *authtarget;
@@ -199,7 +199,7 @@ int on_client_connect (void *cls, const struct sockaddr *addr, socklen_t addrlen
 	inet_ntop(AF_INET, &(addr_in -> sin_addr), ip, INET_ADDRSTRLEN);
 
 	if (!(mac = arp_get(ip))) {
-		/* We could not get their MAC address */
+		/* We could not get their MAC address 
 		debug(LOG_NOTICE, "Could not arp MAC address for %s", ip);
 		return MHD_NO;
 	}
@@ -211,7 +211,7 @@ int on_client_connect (void *cls, const struct sockaddr *addr, socklen_t addrlen
 
 	safe_asprintf(&url,  "https://wifi.lazooo.com/connect?token=%s", client->token);
 	redir = "https://wifi.lazooo.com/navigate";
-	authtarget = http_nodogsplash_make_authtarget(client->token, redir);
+	authtarget = http_nodogsplash_make_authtarget(client->token, redir);*/
 	return MHD_YES;	
 }
 
