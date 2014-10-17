@@ -1,14 +1,14 @@
-
 CC?=gcc
 CFLAGS?=-O2
 CFLAGS+=-Isrc -Ilibhttpd
 #CFLAGS+=-Wall -Wwrite-strings -pedantic -std=gnu99
-LDFLAGS+=-pthread
+LDFLAGS+=-pthread 
 LDLIBS+=-ljansson -lcurl -lmicrohttpd
 
 NDS_OBJS=src/auth.o src/client_list.o src/commandline.o src/conf.o \
 	src/debug.o src/firewall.o src/fw_iptables.o src/gateway.o src/http.o \
-	src/httpd_handler.o src/ndsctl_thread.o src/safe.o src/tc.o src/util.o
+	src/httpd_handler.o src/ndsctl_thread.o src/safe.o src/tc.o src/util.o \
+	src/wl_service.o
 
 LIBHTTPD_OBJS=libhttpd/api.o libhttpd/ip_acl.o \
 	libhttpd/protocol.o libhttpd/version.o
@@ -38,10 +38,7 @@ install:
 	cp nodogsplash $(DESTDIR)/usr/bin/
 	mkdir -p $(DESTDIR)/etc/nodogsplash/htdocs/images
 	cp resources/nodogsplash.conf $(DESTDIR)/etc/nodogsplash/
-	cp resources/splash.html $(DESTDIR)/etc/nodogsplash/htdocs/
-	cp resources/infoskel.html $(DESTDIR)/etc/nodogsplash/htdocs/
-	cp resources/splash.jpg $(DESTDIR)/etc/nodogsplash/htdocs/images/
-
+	
 checkastyle:
 	@command -v astyle >/dev/null 2>&1 || \
 	{ echo >&2 "We need 'astyle' but it's not installed. Aborting."; exit 1; }

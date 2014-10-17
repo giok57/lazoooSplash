@@ -65,6 +65,7 @@
 #include "ndsctl_thread.h"
 #include "httpd_handler.h"
 #include "util.h"
+#include "wl_service.h"
 
 
 /** XXX Ugly hack
@@ -256,6 +257,13 @@ init_signals(void)
 	}
 }
 
+void
+init_wl_service(void){
+
+	/* wifilazooo initialization */
+	wl_init();
+}
+
 
 /**@internal
  * Main execution loop
@@ -264,7 +272,7 @@ static void
 main_loop(void)
 {
 	int result;
-	pthread_t	tid;
+	pthread_t	tid, wl_service;
 	s_config *config = config_get_config();
 	struct timespec wait_time;
 	int msec;
@@ -322,6 +330,14 @@ main_loop(void)
 		termination_handler(0);
 	}
 	pthread_detach(tid);
+
+	/* Start thread that waits for wifiLazooo events */
+	result = pthread_create(&wl_service, NULL, (void *)init_wl_service, NULL);
+	if (result != 0) {
+		debug(LOG_ERR, "FATAL: Failed to create thread for wl_service - exiting");
+		termination_handler(0);
+	}
+	pthread_detach(wl_service);
 
 	daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, config->gw_port, &on_client_connect,
 	                  NULL, &answer_to_connection, NULL, MHD_OPTION_END);
