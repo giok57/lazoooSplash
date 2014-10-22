@@ -290,18 +290,18 @@ wl_init(void) {
                         if(json_is_string(data)){
 
                             wl_ap_token = json_string_value(data);
-                            debug(LOG_NOTICE, "Returned apToken: %s", wl_ap_token);
+                            debug(LOG_DEBUG, "Returned apToken: %s", wl_ap_token);
                             sleep(WAIT_SECONDS);
                         }
                     }
                 }
             }else{
-                debug(LOG_NOTICE, "WifiLazooo AP registration returns no value.");
+                debug(LOG_DEBUG, "WifiLazooo AP registration returns no value.");
             }
         }/* ap registration */
         if(wl_ap_token != NULL){
 
-            debug(LOG_NOTICE, "Making a request to wifilazooo api for new events.");
+            debug(LOG_DEBUG, "Making a request to wifilazooo api for new events.");
             safe_asprintf(&url_events, URL_FORMAT_EVENTS, wl_ap_token);
             text = wl_request(url_events);
             if (text != NULL) {
@@ -371,7 +371,7 @@ wl_init(void) {
                 }
             }
             else{
-                debug(LOG_NOTICE, "WifiLazooo AP events api returns no value.");
+                debug(LOG_DEBUG, "WifiLazooo AP events api returns no value.");
             }
         }/* events polling */
         else{
