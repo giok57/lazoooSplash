@@ -265,7 +265,7 @@ wl_init(void) {
     json_t *root, *data, *event, *token, *seconds, *speed, *type;
     json_error_t error;
 
-    snprintf(url_register, URL_SIZE, URL_FORMAT_REGISTER, UUID);
+    safe_asprintf(&url_register, URL_FORMAT_REGISTER, UUID);
 
     while(1) {
 
@@ -302,7 +302,7 @@ wl_init(void) {
         if(wl_ap_token != NULL){
 
             debug(LOG_NOTICE, "Making a request to wifilazooo api for new events.");
-            snprintf(url_events, URL_SIZE, URL_FORMAT_EVENTS, wl_ap_token);
+            safe_asprintf(&url_events, URL_FORMAT_EVENTS, wl_ap_token);
             text = wl_request(url_events);
             if (text != NULL) {
 
