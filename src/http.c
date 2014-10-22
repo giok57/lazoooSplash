@@ -228,7 +228,7 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 	client = client_list_add_client(ip);
 	UNLOCK_CLIENT_LIST();
 
-	safe_asprintf(&url_connect, "https://wifi.lazooo.com/connect?token=%s&user=%s&ap=%s", client->token, client->mac, UUID);
+	safe_asprintf(&url_connect, "https://wifi.lazooo.com/api/v1/business/new/come?userToken=%s&userMAC=%s&UUID=%s", client->token, client->mac, UUID);
 	safe_asprintf(&redir,  "https://wifi.lazooo.com/navigate?to=%s", to);
 	authtarget = http_nodogsplash_make_authtarget(client->token, redir);
 	//client_list_find_by_ip(const char *ip);
