@@ -172,7 +172,7 @@ wl_request(const char *url) {
         .data = data,
         .pos = 0
     };
-    char *url_clean = curl_easy_escape(curl, url, 0);
+    char *url_clean = url;
     curl_easy_setopt(curl, CURLOPT_URL, url_clean);
 
     /* pass a User-Agent header to wifiLazooo service */
