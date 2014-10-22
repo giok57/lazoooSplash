@@ -39,7 +39,7 @@
 #define BUFFER_SIZE  (256 * 1024)  /* 256 KB */
 
 #define URL_FORMAT_REGISTER   "https://wifi.lazooo.com/api/v1/business/from/ap/%s/register"
-#define URL_FORMAT_EVENTS   "https://wifi.lazooo.com/api/v1/business/from/ap/events?apToken=%s"
+#define URL_FORMAT_EVENTS   "https://wifi.lazooo.com/api/v1/business/from/ap/events?tokenAP=%s"
 #define UUID_FILE_PATH   "/etc/nodogsplash/WL_UUID"
 #define URL_SIZE     256
 #define WAIT_SECONDS 3

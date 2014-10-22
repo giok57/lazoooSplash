@@ -290,6 +290,8 @@ wl_init(void) {
                         if(json_is_string(data)){
 
                             wl_ap_token = json_string_value(data);
+                            debug(LOG_NOTICE, "Returned apToken: %s", wl_ap_token);
+                            sleep(WAIT_SECONDS);
                         }
                     }
                 }
