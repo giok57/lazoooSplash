@@ -245,6 +245,7 @@ get_ap_UUID() {
         debug(LOG_DEBUG, "Retrieved UUID: %s", line);
     }
     fclose (fp);
+    strtok(line, "\n");
     return line;
 }
 
