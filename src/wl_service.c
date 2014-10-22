@@ -78,7 +78,7 @@ manage_disconnect(EVENT disconnect_event) {
     char *ip;
     debug(LOG_DEBUG, "Entering manage_disconnect on wl_service");
     LOCK_CLIENT_LIST();
-    if ((client = client_list_find_by_token(disconnect_event.token)) != NULL) {
+    if ((client = client_list_find_by_mac(disconnect_event.token)) != NULL) {
 
         ip = safe_strdup(client->ip);
         UNLOCK_CLIENT_LIST();
@@ -103,7 +103,7 @@ manage_connect(EVENT connect_event) {
     char *ip;
     debug(LOG_DEBUG, "Entering manage_connect on wl_service");
     LOCK_CLIENT_LIST();
-    if ((client = client_list_find_by_token(connect_event.token)) != NULL) {
+    if ((client = client_list_find_by_mac(connect_event.token)) != NULL) {
 
         ip = safe_strdup(client->ip);
         UNLOCK_CLIENT_LIST();
@@ -198,10 +198,10 @@ wl_request(const char *url) {
     if(code != 200)
     {
         debug(LOG_DEBUG, "During the request made at: %s, server returned code: %d", url_clean, code);
-        last_req_code = code;
         wl_down();
         goto error;
     }
+    last_req_code = code;
     free(url_clean);
     curl_easy_cleanup(curl);
     curl_slist_free_all(headers);
