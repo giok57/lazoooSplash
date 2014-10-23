@@ -83,9 +83,10 @@ manage_disconnect(EVENT disconnect_event) {
         ip = safe_strdup(client->ip);
         UNLOCK_CLIENT_LIST();
         auth_client_action(ip, client->token, AUTH_MAKE_DEAUTHENTICATED);
+        debug(LOG_NOTICE, "MAC %s Deauthenticated!", connect_event.token);
     } else {
 
-        debug(LOG_DEBUG, "Cannot disconnect token: %s because is no more on client list", disconnect_event.token);
+        debug(LOG_DEBUG, "Cannot disconnect mac: %s because is no more on client list", disconnect_event.token);
         UNLOCK_CLIENT_LIST();
     }
     free(ip);
@@ -108,9 +109,10 @@ manage_connect(EVENT connect_event) {
         ip = safe_strdup(client->ip);
         UNLOCK_CLIENT_LIST();
         auth_client_action(ip, client->token, AUTH_MAKE_AUTHENTICATED);
+        debug(LOG_NOTICE, "MAC %s Authenticated!", connect_event.token);
     } else {
 
-        debug(LOG_DEBUG, "Cannot connect token: %s because is no more on client list", connect_event.token);
+        debug(LOG_DEBUG, "Cannot connect mac: %s because is no more on client list", connect_event.token);
         UNLOCK_CLIENT_LIST();
     }
     free(ip);
