@@ -83,7 +83,7 @@ manage_disconnect(EVENT disconnect_event) {
         ip = safe_strdup(client->ip);
         UNLOCK_CLIENT_LIST();
         auth_client_action(ip, client->token, AUTH_MAKE_DEAUTHENTICATED);
-        debug(LOG_NOTICE, "MAC %s Deauthenticated!", connect_event.token);
+        debug(LOG_NOTICE, "MAC %s Deauthenticated!", disconnect_event.token);
     } else {
 
         debug(LOG_DEBUG, "Cannot disconnect mac: %s because is no more on client list", disconnect_event.token);
