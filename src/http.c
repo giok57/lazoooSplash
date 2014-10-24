@@ -206,12 +206,12 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 	s_config *config;
 	char *redir, cmd_buff[255];
 
-	if(MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "host") != NULL){
+	if(MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "X-Host") != NULL && MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "X-Forwarded-Proto") != NULL ){
 
-		safe_asprintf(&to, "%s%s", MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "host"), url);
+		safe_asprintf(&to, "%s://%s%s",MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "X-Forwarded-Proto"), MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "X-Host"), url);
 	}
 
-	char *ip = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "X-Real-Ip");
+	char *ip = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "X-Forwarded-For");
 	if(ip == NULL){
 
 		debug(LOG_DEBUG, "Could not find x-forwarded ip address for");

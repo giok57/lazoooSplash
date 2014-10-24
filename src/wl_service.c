@@ -82,7 +82,7 @@ manage_disconnect(EVENT disconnect_event) {
 
         ip = safe_strdup(client->ip);
         UNLOCK_CLIENT_LIST();
-        auth_client_action(ip, client->token, AUTH_MAKE_DEAUTHENTICATED);
+        auth_client_action(ip, connect_event.token, AUTH_MAKE_DEAUTHENTICATED);
         debug(LOG_NOTICE, "MAC %s Deauthenticated!", disconnect_event.token);
     } else {
 
@@ -108,7 +108,7 @@ manage_connect(EVENT connect_event) {
 
         ip = safe_strdup(client->ip);
         UNLOCK_CLIENT_LIST();
-        auth_client_action(ip, client->token, AUTH_MAKE_AUTHENTICATED);
+        auth_client_action(ip, connect_event.token, AUTH_MAKE_AUTHENTICATED);
         debug(LOG_NOTICE, "MAC %s Authenticated!", connect_event.token);
     } else {
 
