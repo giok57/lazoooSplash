@@ -173,6 +173,21 @@ http_nodogsplash_callback_index(httpd *webserver, request *r)
 	http_nodogsplash_first_contact(r);
 }
 
+static int return_page_js (struct MHD_Connection *connection, char *url) {
+	int ret;
+	struct MHD_Response *response;
+	const char *page;
+	safe_asprintf(&page,  "<html><head><script type='text/javascript'>window.location.href='%s'</script></head><body><a href='%s'>connect @wifiLazooo now</a></body></html>", url, url);
+	response = MHD_create_response_from_buffer (strlen (page), (void *) page, MHD_RESPMEM_PERSISTENT);
+	if (!response)
+		return MHD_NO;
+
+	ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+	MHD_destroy_response (response);
+
+	return ret;
+}
+
 static int return_page (struct MHD_Connection *connection, char *url) {
 	int ret;
 	struct MHD_Response *response;
@@ -232,7 +247,12 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 	safe_asprintf(&redir,  "https://wifi.lazooo.com/navigate?to=%s", to);
 	authtarget = http_nodogsplash_make_authtarget(client->token, redir);
 	//client_list_find_by_ip(const char *ip);
-	return return_page(connection, url_connect);
+	char *session_cookies = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Cookie");
+	if (session_cookies != NULL && strstr(session_cookies, "wifiLazooo-session-key") != NULL) {
+    	//has the cookie setted
+		return return_page(connection, url_connect);
+	}
+	return return_page_js(connection, url_connect);
 }
 
 
