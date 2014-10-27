@@ -248,7 +248,7 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 	authtarget = http_nodogsplash_make_authtarget(client->token, redir);
 	//client_list_find_by_ip(const char *ip);
 	char *session_cookies = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Cookie");
-	if (session_cookies != NULL && strstr(session_cookies, "wifiLazooo-session-key") != NULL) {
+	if (session_cookies != NULL && strstr(session_cookies, "wifiLazooo-brdlgn") != NULL) {
     	//has the cookie setted
 		return return_page(connection, url_connect);
 	}
