@@ -200,6 +200,7 @@ wl_request(const char *url) {
     if(code != 200)
     {
         debug(LOG_DEBUG, "During the request made at: %s, server returned code: %d", url_clean, code);
+        last_req_code = code;
         wl_down();
         goto error;
     }
