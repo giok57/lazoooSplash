@@ -48,6 +48,8 @@
 #define DEFAULT_CONFIGFILE SYSCONFDIR"/nodogsplash/nodogsplash.conf"
 #endif
 #define DEFAULT_DAEMON 1
+#define DEFAULT_WIFILAZOOO_API_ROOT "https://wifi.lazooo.com/api/v1"
+#define DEFAULT_WIFILAZOOO_WEB_ROOT "https://wifi.lazooo.com"
 #define DEFAULT_DEBUGLEVEL LOG_NOTICE
 #define DEFAULT_MAXCLIENTS 20
 #define DEFAULT_GATEWAY_IPRANGE "0.0.0.0/0"
@@ -139,6 +141,8 @@ typedef struct _MAC_t {
  */
 typedef struct {
 	char configfile[255];		/**< @brief name of the config file */
+	char wifiLazooo_api_root;
+	char wifiLazooo_web_root;
 	char *ndsctl_sock;		/**< @brief ndsctl path to socket */
 	char *internal_sock;		/**< @brief internal path to socket */
 	int daemon;			/**< @brief if daemon > 0, use daemon mode */

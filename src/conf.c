@@ -65,6 +65,8 @@ static int missing_parms;
  The different configuration options */
 typedef enum {
 	oBadOption,
+	oWifiLazoooApiRoot,
+	oWifiLazoooWebRoot,
 	oDaemon,
 	oDebugLevel,
 	oMaxClients,
@@ -122,6 +124,8 @@ static const struct {
 	int required;
 } keywords[] = {
 	{ "daemon", oDaemon },
+	{ "wifilazoooapiroot", oWifiLazoooApiRoot },
+	{ "wifilazooowebroot", oWifiLazoooWebRoot },
 	{ "debuglevel", oDebugLevel },
 	{ "maxclients", oMaxClients },
 	{ "externalinterface", oExternalInterface },
@@ -202,6 +206,8 @@ config_init(void)
 	debug(LOG_DEBUG, "Setting default config parameters");
 	strncpy(config.configfile, DEFAULT_CONFIGFILE, sizeof(config.configfile));
 	config.debuglevel = DEFAULT_DEBUGLEVEL;
+	config.wifiLazooo_api_root = DEFAULT_WIFILAZOOO_API_ROOT;
+	config.wifiLazooo_web_root = DEFAULT_WIFILAZOOO_WEB_ROOT;
 	config.ext_interface = NULL;
 	config.maxclients = DEFAULT_MAXCLIENTS;
 	config.gw_name = DEFAULT_GATEWAYNAME;
@@ -714,6 +720,12 @@ config_read(const char *filename)
 			if (config.daemon == -1 && ((value = parse_boolean_value(p1)) != -1)) {
 				config.daemon = value;
 			}
+			break;
+		case oWifiLazoooApiRoot:
+			config.wifiLazooo_api_root = safe_strdup(p1);
+			break;
+		case oWifiLazoooWebRoot:
+			config.wifiLazooo_web_root = safe_strdup(p1);
 			break;
 		case oMaxClients:
 			if(sscanf(p1, "%d", &config.maxclients) < 1) {

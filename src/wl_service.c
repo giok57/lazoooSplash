@@ -27,6 +27,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <syslog.h>
+#include <pthread.h>
 
 #include <jansson.h>
 #include <curl/curl.h>
@@ -36,19 +37,24 @@
 #include "auth.h"
 #include "safe.h"
 #include "debug.h"
+#include "conf.h"
 #include "wl_service.h"
 #include "gateway.h"
 
 
 int wl_current_status;
 char* wl_ap_token;
-char* UUID;
+char *UUID = NULL;
 int last_req_code;
 
 /* Defined in clientlist.c */
 extern  pthread_mutex_t client_list_mutex;
 extern  pthread_mutex_t config_mutex;
 
+struct WriteThis {
+  const char *readptr;
+  long sizeleft;
+};
 
 struct write_result {
     char *data;
@@ -63,7 +69,6 @@ struct event {
 };
 
 typedef struct event EVENT;
-
 
 
 /**
@@ -133,6 +138,25 @@ write_response(void *ptr, size_t size, size_t nmemb, void *stream) {
     return size * nmemb;
 }
 
+static void
+safe_sleep(int seconds){
+    pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+    pthread_mutex_t cond_mutex = PTHREAD_MUTEX_INITIALIZER;
+    struct  timespec    timeout;
+
+    timeout.tv_sec = time(NULL) + seconds;
+    timeout.tv_nsec = 0;
+
+    /* Mutex must be locked for pthread_cond_timedwait... */
+    pthread_mutex_lock(&cond_mutex);
+
+    /* Thread safe "sleep" */
+    pthread_cond_timedwait(&cond, &cond_mutex, &timeout);
+
+    /* No longer needs to be locked */
+    pthread_mutex_unlock(&cond_mutex);
+}
+
 /**
 * the router is currently offline, No network
 **/
@@ -140,7 +164,7 @@ static void
 wl_offline(void) {
 
     wl_current_status = WL_STATUS_NO_CONNECTION;
-    sleep(WAIT_SECONDS);
+    safe_sleep(WAIT_SECONDS);
 }
 
 /**
@@ -150,9 +174,75 @@ static void
 wl_down(void) {
 
     wl_current_status = WL_STATUS_SERVICE_UNAVAILABLE;
-    sleep(WAIT_SECONDS);
+    safe_sleep(WAIT_SECONDS);
 }
 
+static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *userp) {
+
+  struct WriteThis *pooh = (struct WriteThis *)userp;
+  if(size*nmemb < 1)
+    return 0;
+ 
+  if(pooh->sizeleft) {
+    *(char *)ptr = pooh->readptr[0]; /* copy one single byte */ 
+    pooh->readptr++;                 /* advance pointer */ 
+    pooh->sizeleft--;                /* less data left */ 
+    return 1;                        /* we return 1 byte at a time! */ 
+  }
+  return 0;                          /* no more data left to deliver */ 
+}
+
+int
+wl_post(const char *url, char *json){
+    CURL *curl;
+    CURLcode res;
+
+    struct WriteThis pooh;
+
+    pooh.readptr = json;
+    pooh.sizeleft = (long)strlen(json);
+
+    /* get a curl handle */ 
+    curl = curl_easy_init();
+    if(curl) {
+        /* First set the URL that is about to receive our POST. */ 
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+
+        /*######### TODO: REMEMBER --> for development use only! ########*/
+        /* in a normal behaviour we need to check here the authenticity of the server */
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+
+        /* Now specify we want to POST data */ 
+        curl_easy_setopt(curl, CURLOPT_POST, 1L);
+
+        /* we want to use our own read function */ 
+        curl_easy_setopt(curl, CURLOPT_READFUNCTION, read_callback);
+
+        /* pointer to pass to our read function */ 
+        curl_easy_setopt(curl, CURLOPT_READDATA, &pooh);
+
+        struct curl_slist *chunk = NULL;
+
+        /* Remove a header curl would otherwise add by itself */ 
+        chunk = curl_slist_append(chunk, "Content-type: application/json");
+
+        /* set our custom set of headers */ 
+        res = curl_easy_setopt(curl, CURLOPT_HTTPHEADER, chunk);
+        /* Set the expected POST size. If you want to POST large amounts of data,
+           consider CURLOPT_POSTFIELDSIZE_LARGE */ 
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, pooh.sizeleft);
+
+        /* Perform the request, res will get the return code */ 
+        res = curl_easy_perform(curl);
+        /* Check for errors */ 
+        if(res != CURLE_OK)
+            debug(LOG_NOTICE, "During the post made at: %s, server returned: %s", url, curl_easy_strerror(res));
+
+        /* always cleanup */ 
+        curl_easy_cleanup(curl);
+    }
+    return res;
+}
 
 char *
 wl_request(const char *url) {
@@ -208,7 +298,6 @@ wl_request(const char *url) {
     free(url_clean);
     curl_easy_cleanup(curl);
     curl_slist_free_all(headers);
-    curl_global_cleanup();
 
     /* zero-terminate the result */
     data[write_result.pos] = '\0';
@@ -227,6 +316,70 @@ error:
     return NULL;
 }
 
+void
+user_inactive(char *user_token, int inactive_seconds) {
+    s_config *config = config_get_config();
+    //if this function will be called before wl_init()
+    if(UUID == NULL)
+        UUID = get_ap_UUID();
+    char *json, *url;
+    safe_asprintf(&url, "%s/business/from/ap/%s/user/inactive", config->wifiLazooo_api_root, UUID);
+    safe_asprintf(&json, "{'userToken': '%s', 'inactiveTime': '%d'}", user_token, inactive_seconds);
+
+    wl_post(url, json);
+    
+    free(json);
+    free(url);
+}
+
+int
+can_mac_connects(char *mac){
+
+    s_config *config = config_get_config();
+    CURL *curl = NULL;
+    CURLcode status;
+    struct curl_slist *headers = NULL;
+    long code;
+    char *url;
+
+    curl = curl_easy_init();
+    if(!curl)
+        return FALSE;
+
+    safe_asprintf(&url, "%s/business/from/ap/%s/user/mac/%s/cannavigate", config->wifiLazooo_api_root, UUID, mac);
+    curl_easy_setopt(curl, CURLOPT_URL, url);
+    /* put a two seconds timeout */
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 2);
+
+    /* pass a User-Agent header to wifiLazooo service */
+    headers = curl_slist_append(headers, "User-Agent: wifiLazooo-router-cannavigate");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+    /*######### TODO: REMEMBER --> for development use only! ########*/
+    /* in a normal behaviour we need to check here the authenticity of the server */
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+
+    status = curl_easy_perform(curl);
+    if(status != 0) {
+        debug(LOG_DEBUG, "Unable to contact wifiLazooo during the cannavigate request made at: %s", url);
+        return FALSE;
+    }
+
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
+    if(code != 200) {
+        debug(LOG_DEBUG, "During the cannavigate request made at: %s, server returned code: %d", url, code);
+        return FALSE;
+    }
+    free(url);
+    curl_easy_cleanup(curl);
+    curl_slist_free_all(headers);
+    return TRUE;
+}
+
+void
+allow_facebook_ips(){
+
+}
 
 
 char *
@@ -258,17 +411,23 @@ get_ap_UUID() {
 void
 wl_init(void) {
 
+    s_config *config = config_get_config();
+
+    debug(LOG_NOTICE, "Initializing libcurl.");
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    
     debug(LOG_NOTICE, "Initializing wifiLazooo poller.");
     size_t i;
     wl_current_status = WL_STATUS_OK;
 	wl_ap_token = NULL;
     char *url_events, *url_register, *text;
-    UUID = get_ap_UUID();
+    if(UUID == NULL)
+        UUID = get_ap_UUID();
     debug(LOG_NOTICE, "Starting wifiLazooo service with UUID: %s", UUID);
     json_t *root, *data, *event, *token, *seconds, *speed, *type;
     json_error_t error;
 
-    safe_asprintf(&url_register, URL_FORMAT_REGISTER, UUID);
+    safe_asprintf(&url_register, "%s/business/from/ap/%s/register", config->wifiLazooo_api_root, UUID);
 
     while(1) {
 
@@ -294,7 +453,7 @@ wl_init(void) {
 
                             wl_ap_token = json_string_value(data);
                             debug(LOG_DEBUG, "Returned apToken: %s", wl_ap_token);
-                            sleep(WAIT_SECONDS);
+                            safe_sleep(WAIT_SECONDS);
                         }
                     }
                 }
@@ -305,7 +464,7 @@ wl_init(void) {
         if(wl_ap_token != NULL){
 
             debug(LOG_DEBUG, "Making a request to wifilazooo api for new events.");
-            safe_asprintf(&url_events, URL_FORMAT_EVENTS, wl_ap_token);
+            safe_asprintf(&url_events, "%s/business/from/ap/events?tokenAP=%s", config->wifiLazooo_api_root, wl_ap_token);
             text = wl_request(url_events);
             if (text != NULL) {
 
@@ -380,7 +539,7 @@ wl_init(void) {
         else{
             /* doesn't have a valid wl_ap_token so wait */
             debug(LOG_DEBUG, "Cannot wait for wifiLazooo events because wl_ap_token is not valid!");
-            sleep(WAIT_SECONDS);
+            safe_sleep(WAIT_SECONDS);
         }
     }/* main loop */
 }

@@ -36,6 +36,8 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <curl/curl.h>
+
 /* for strerror() */
 #include <string.h>
 
@@ -173,6 +175,7 @@ sigchld_handler(int s)
 void
 termination_handler(int s)
 {
+	curl_global_cleanup();
 	static	pthread_mutex_t	sigterm_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 	debug(LOG_NOTICE, "Handler for termination caught signal %d", s);
@@ -340,7 +343,7 @@ main_loop(void)
 	pthread_detach(wl_service);
 
 	daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, config->gw_port, &on_client_connect,
-	                  NULL, &answer_to_connection, NULL, MHD_OPTION_END);
+	                  NULL, &answer_to_connection, NULL, MHD_OPTION_THREAD_POOL_SIZE, 6, MHD_OPTION_END);
 
 	if (NULL == daemon ) {
 	  debug(LOG_ERR, "FATAL: Failed to create the server daemon");

@@ -51,6 +51,7 @@
 #include "httpd.h"
 #include "client_list.h"
 #include "common.h"
+#include "wl_service.h"
 
 #include "util.h"
 
@@ -173,6 +174,21 @@ http_nodogsplash_callback_index(httpd *webserver, request *r)
 	http_nodogsplash_first_contact(r);
 }
 
+static int return_ok_page_js (struct MHD_Connection *connection, char *url) {
+	int ret;
+	struct MHD_Response *response;
+	const char *page;
+	safe_asprintf(&page,  "<html><head><title>Success</title><script type='text/javascript'>window.location.href='%s'</script></head><body>Success</body></html>", url, url);
+	response = MHD_create_response_from_buffer (strlen (page), (void *) page, MHD_RESPMEM_PERSISTENT);
+	if (!response)
+		return MHD_NO;
+
+	ret = MHD_queue_response (connection, MHD_HTTP_OK, response);
+	MHD_destroy_response (response);
+
+	return ret;
+}
+
 static int return_page_js (struct MHD_Connection *connection, char *url) {
 	int ret;
 	struct MHD_Response *response;
@@ -205,8 +221,7 @@ static int return_page (struct MHD_Connection *connection, char *url) {
 }
 
 int on_client_connect (void *cls, const struct sockaddr *addr, socklen_t addrlen) {
-/*
-    */
+
 	return MHD_YES;	
 }
 
@@ -243,10 +258,14 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 	client = client_list_add_client(ip);
 	UNLOCK_CLIENT_LIST();
 
-	safe_asprintf(&url_connect, "https://wifi.lazooo.com/api/v1/business/new/come?userToken=%s&userMAC=%s&UUID=%s&destination=%s", client->token, client->mac, UUID, to);
-	safe_asprintf(&redir,  "https://wifi.lazooo.com/navigate?to=%s", to);
+	safe_asprintf(&url_connect, "%s/business/new/come?userToken=%s&userMAC=%s&UUID=%s&destination=%s", config->wifiLazooo_api_root, client->token, client->mac, UUID, to);
+	safe_asprintf(&redir,  "%s/navigate?to=%s", config->wifiLazooo_web_root, to);
 	authtarget = http_nodogsplash_make_authtarget(client->token, redir);
 	//client_list_find_by_ip(const char *ip);
+	/* check for immediately connects a client */
+	if(can_mac_connects(client->mac)){
+		return return_page_js(connection, to);
+	}
 	char *session_cookies = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Cookie");
 	if (session_cookies != NULL && strstr(session_cookies, "WLBRDLGN") != NULL) {
     	//has the cookie setted
