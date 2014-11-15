@@ -65,8 +65,7 @@ static int missing_parms;
  The different configuration options */
 typedef enum {
 	oBadOption,
-	oWifiLazoooApiRoot,
-	oWifiLazoooWebRoot,
+	
 	oDaemon,
 	oDebugLevel,
 	oMaxClients,
@@ -124,8 +123,7 @@ static const struct {
 	int required;
 } keywords[] = {
 	{ "daemon", oDaemon },
-	{ "wifilazoooapiroot", oWifiLazoooApiRoot },
-	{ "wifilazooowebroot", oWifiLazoooWebRoot },
+	
 	{ "debuglevel", oDebugLevel },
 	{ "maxclients", oMaxClients },
 	{ "externalinterface", oExternalInterface },
@@ -172,6 +170,8 @@ static const struct {
 	{ "FW_MARK_AUTHENTICATED", oFWMarkAuthenticated },
 	{ "FW_MARK_TRUSTED", oFWMarkTrusted },
 	{ "FW_MARK_BLOCKED", oFWMarkBlocked },
+
+
 	{ NULL, oBadOption },
 };
 
@@ -201,13 +201,13 @@ config_get_config(void)
 void
 config_init(void)
 {
+
 	t_firewall_ruleset *rs;
 
 	debug(LOG_DEBUG, "Setting default config parameters");
 	strncpy(config.configfile, DEFAULT_CONFIGFILE, sizeof(config.configfile));
 	config.debuglevel = DEFAULT_DEBUGLEVEL;
-	config.wifiLazooo_api_root = DEFAULT_WIFILAZOOO_API_ROOT;
-	config.wifiLazooo_web_root = DEFAULT_WIFILAZOOO_WEB_ROOT;
+	
 	config.ext_interface = NULL;
 	config.maxclients = DEFAULT_MAXCLIENTS;
 	config.gw_name = DEFAULT_GATEWAYNAME;
@@ -685,6 +685,7 @@ config_read(const char *filename)
 	}
 
 	while (fgets(line, MAX_BUF, fd)) {
+
 		linenum++;
 		s = _strip_whitespace(line);
 
@@ -697,6 +698,7 @@ config_read(const char *filename)
 
 		/* find first word (i.e. option) end boundary */
 		p1 = s;
+
 		while ((*p1 != '\0') && (!isspace(*p1))) p1++;
 		/* if this is end of line, it's a problem */
 		if(p1[0] == '\0') {
@@ -713,6 +715,7 @@ config_read(const char *filename)
 		while (isblank(*p1)) p1++;
 
 		debug(LOG_DEBUG, "Parsing option: %s, arg: %s", s, p1);
+
 		opcode = config_parse_opcode(s, filename, linenum);
 
 		switch(opcode) {
@@ -721,18 +724,14 @@ config_read(const char *filename)
 				config.daemon = value;
 			}
 			break;
-		case oWifiLazoooApiRoot:
-			config.wifiLazooo_api_root = safe_strdup(p1);
-			break;
-		case oWifiLazoooWebRoot:
-			config.wifiLazooo_web_root = safe_strdup(p1);
-			break;
+		
 		case oMaxClients:
 			if(sscanf(p1, "%d", &config.maxclients) < 1) {
 				debug(LOG_ERR, "Bad arg %s to option %s on line %d in %s", p1, s, linenum, filename);
 				debug(LOG_ERR, "Exiting...");
 				exit(-1);
 			}
+			break;
 		case oExternalInterface:
 			config.ext_interface = safe_strdup(p1);
 			break;

@@ -162,7 +162,7 @@ safe_sleep(int seconds){
 **/
 static void
 wl_offline(void) {
-
+    debug(LOG_DEBUG, "WifiLazooo offline, sleep for %d seconds", WAIT_SECONDS);
     wl_current_status = WL_STATUS_NO_CONNECTION;
     safe_sleep(WAIT_SECONDS);
 }
@@ -172,7 +172,7 @@ wl_offline(void) {
 */
 static void
 wl_down(void) {
-
+    debug(LOG_DEBUG, "WifiLazooo down, sleep for %d seconds", WAIT_SECONDS);
     wl_current_status = WL_STATUS_SERVICE_UNAVAILABLE;
     safe_sleep(WAIT_SECONDS);
 }
@@ -196,6 +196,8 @@ int
 wl_post(const char *url, char *json){
     CURL *curl;
     CURLcode res;
+    char *data;
+
 
     struct WriteThis pooh;
 
@@ -205,12 +207,24 @@ wl_post(const char *url, char *json){
     /* get a curl handle */ 
     curl = curl_easy_init();
     if(curl) {
+
+	data = malloc(BUFFER_SIZE);
+	if(!data)
+	    return 0;
+
+	struct write_result write_result = {
+	    .data = data,
+	    .pos = 0
+	};
         /* First set the URL that is about to receive our POST. */ 
         curl_easy_setopt(curl, CURLOPT_URL, url);
 
         /*######### TODO: REMEMBER --> for development use only! ########*/
         /* in a normal behaviour we need to check here the authenticity of the server */
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_response);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &write_result);
 
         /* Now specify we want to POST data */ 
         curl_easy_setopt(curl, CURLOPT_POST, 1L);
@@ -239,14 +253,17 @@ wl_post(const char *url, char *json){
             debug(LOG_NOTICE, "During the post made at: %s, server returned: %s", url, curl_easy_strerror(res));
 
         /* always cleanup */ 
+	free(data);
         curl_easy_cleanup(curl);
+        curl_slist_free_all(chunk);
     }
     return res;
 }
 
 char *
 wl_request(const char *url) {
-    CURL *curl = NULL;
+    CURL *curl = NULL; 
+    
     CURLcode status;
     struct curl_slist *headers = NULL;
     char *data = NULL;
@@ -264,8 +281,8 @@ wl_request(const char *url) {
         .data = data,
         .pos = 0
     };
-    char *url_clean = url;
-    curl_easy_setopt(curl, CURLOPT_URL, url_clean);
+
+    curl_easy_setopt(curl, CURLOPT_URL, url);
 
     /* pass a User-Agent header to wifiLazooo service */
     headers = curl_slist_append(headers, "User-Agent: wifiLazooo-router");
@@ -279,23 +296,21 @@ wl_request(const char *url) {
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &write_result);
 
     status = curl_easy_perform(curl);
-    if(status != 0)
-    {
-        debug(LOG_DEBUG, "Unable to contact wifiLazooo during the request made at: %s, you are offline for %d seconds", url_clean, WAIT_SECONDS);
+    if(status != 0){
+        debug(LOG_DEBUG, "Unable to contact wifiLazooo during the request made at: %s", url);
         wl_offline();
         goto error;
     }
 
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
-    if(code != 200)
-    {
-        debug(LOG_DEBUG, "During the request made at: %s, server returned code: %d", url_clean, code);
+    if(code != 200){
+        debug(LOG_DEBUG, "During the request made at: %s, server returned code: %d", url, code);
         last_req_code = code;
         wl_down();
         goto error;
     }
     last_req_code = code;
-    free(url_clean);
+    free(url);
     curl_easy_cleanup(curl);
     curl_slist_free_all(headers);
 
@@ -305,8 +320,8 @@ wl_request(const char *url) {
     return data;
 
 error:
-    if(url_clean)
-        free(url_clean);
+    if(url)
+        free(url);
     if(data)
         free(data);
     if(curl)
@@ -323,7 +338,7 @@ user_inactive(char *user_token, int inactive_seconds) {
     if(UUID == NULL)
         UUID = get_ap_UUID();
     char *json, *url;
-    safe_asprintf(&url, "%s/business/from/ap/%s/user/inactive", config->wifiLazooo_api_root, UUID);
+    safe_asprintf(&url, "%s/api/v1/business/from/ap/%s/user/inactive", config->remote_auth_action, UUID);
     safe_asprintf(&json, "{'userToken': '%s', 'inactiveTime': '%d'}", user_token, inactive_seconds);
 
     wl_post(url, json);
@@ -337,6 +352,7 @@ can_mac_connects(char *mac){
 
     s_config *config = config_get_config();
     CURL *curl = NULL;
+    char *data = NULL;
     CURLcode status;
     struct curl_slist *headers = NULL;
     long code;
@@ -346,7 +362,16 @@ can_mac_connects(char *mac){
     if(!curl)
         return FALSE;
 
-    safe_asprintf(&url, "%s/business/from/ap/%s/user/mac/%s/cannavigate", config->wifiLazooo_api_root, UUID, mac);
+    data = malloc(BUFFER_SIZE);
+    if(!data)
+        return FALSE;
+
+    struct write_result write_result = {
+        .data = data,
+        .pos = 0
+    };
+
+    safe_asprintf(&url, "%s/api/v1/business/from/ap/%s/user/mac/%s/cannavigate", config->remote_auth_action, UUID, mac);
     curl_easy_setopt(curl, CURLOPT_URL, url);
     /* put a two seconds timeout */
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, 2);
@@ -358,6 +383,9 @@ can_mac_connects(char *mac){
     /*######### TODO: REMEMBER --> for development use only! ########*/
     /* in a normal behaviour we need to check here the authenticity of the server */
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_response);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &write_result);
 
     status = curl_easy_perform(curl);
     if(status != 0) {
@@ -373,6 +401,7 @@ can_mac_connects(char *mac){
     free(url);
     curl_easy_cleanup(curl);
     curl_slist_free_all(headers);
+    free(data);
     return TRUE;
 }
 
@@ -419,20 +448,21 @@ wl_init(void) {
     debug(LOG_NOTICE, "Initializing wifiLazooo poller.");
     size_t i;
     wl_current_status = WL_STATUS_OK;
-	wl_ap_token = NULL;
+    wl_ap_token = NULL;
     char *url_events, *url_register, *text;
-    if(UUID == NULL)
+    if(UUID == NULL){
         UUID = get_ap_UUID();
+    }
+
     debug(LOG_NOTICE, "Starting wifiLazooo service with UUID: %s", UUID);
     json_t *root, *data, *event, *token, *seconds, *speed, *type;
     json_error_t error;
 
-    safe_asprintf(&url_register, "%s/business/from/ap/%s/register", config->wifiLazooo_api_root, UUID);
-
     while(1) {
 
         if(wl_ap_token == NULL || last_req_code  != 200) {
-
+		
+            safe_asprintf(&url_register, "%s/api/v1/business/from/ap/%s/register", config->remote_auth_action, UUID);
             wl_ap_token = NULL;
             debug(LOG_NOTICE, "Making a request to wifilazooo api for the ap registration.");
             text = wl_request(url_register);
@@ -464,7 +494,7 @@ wl_init(void) {
         if(wl_ap_token != NULL){
 
             debug(LOG_DEBUG, "Making a request to wifilazooo api for new events.");
-            safe_asprintf(&url_events, "%s/business/from/ap/events?tokenAP=%s", config->wifiLazooo_api_root, wl_ap_token);
+            safe_asprintf(&url_events, "%s/api/v1/business/from/ap/events?tokenAP=%s", config->remote_auth_action, wl_ap_token);
             text = wl_request(url_events);
             if (text != NULL) {
 

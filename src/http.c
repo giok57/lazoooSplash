@@ -258,8 +258,8 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 	client = client_list_add_client(ip);
 	UNLOCK_CLIENT_LIST();
 
-	safe_asprintf(&url_connect, "%s/business/new/come?userToken=%s&userMAC=%s&UUID=%s&destination=%s", config->wifiLazooo_api_root, client->token, client->mac, UUID, to);
-	safe_asprintf(&redir,  "%s/navigate?to=%s", config->wifiLazooo_web_root, to);
+	safe_asprintf(&url_connect, "%s/api/v1/business/new/come?userToken=%s&userMAC=%s&UUID=%s&destination=%s", config->remote_auth_action, client->token, client->mac, UUID, to);
+	safe_asprintf(&redir,  "%s/navigate?to=%s", config->remote_auth_action, to);
 	authtarget = http_nodogsplash_make_authtarget(client->token, redir);
 	//client_list_find_by_ip(const char *ip);
 	/* check for immediately connects a client */
