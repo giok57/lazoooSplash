@@ -389,40 +389,67 @@ can_mac_connects(char *mac){
 }
 
 void
+_allow_white_ip(char * host){
+	char *ip1, *ip2;
+	char ip[100];
+
+
+	condense_alpha_str(host);
+	 hostname_to_ip(host, ip);
+	debug(LOG_NOTICE, "allowing  ip %s",  ip);
+	while (ip1 != NULL && strcmp(ip1, ip2) != 0){
+
+	    ip2 = ip1;
+	    if(ip1 != NULL && strlen(ip1) > 4){
+
+		//debug(LOG_NOTICE, "allowing ip %s for host %s", ip1, line);
+		//iptables_do_command("-t nat -A " CHAIN_PREAUTHENTICATED " -p tcp --dport 443 -d %s -j ACCEPT", ip1);
+		//iptables_do_command("-t filter -A " CHAIN_PREAUTHENTICATED " -p tcp --dport 443 -d %s -j ACCEPT", ip1);
+	    }            
+	    //ip1 = hostname_to_ip(line);
+	}
+}
+
+void
 allow_white_ips(){
-    FILE * hosts_file;
-    char * line = NULL;
-    char * ip1 = NULL, *ip2;
-    size_t len = 0;
-    ssize_t read;
+    
 
-    hosts_file = fopen(HOSTS_FILE_PATH, "r");
-    if (hosts_file == NULL)
-        debug(LOG_NOTICE, "Cannot find UUID file located at: %s", HOSTS_FILE_PATH);
+
+
+    int size = 256, pos;
+    int c;
+    char *buffer = (char *)malloc(size);
+
+    FILE *f = fopen(HOSTS_FILE_PATH, "r");
+    if(f) {
+      do { // read all lines in file
+        pos = 0;
+        do{ // read one line
+          c = fgetc(f);
+          if(c != EOF) buffer[pos++] = (char)c;
+          if(pos >= size - 1) { // increase buffer length - leave room for 0
+            size *=2;
+            buffer = (char*)realloc(buffer, size);
+          }
+        }while(c != EOF && c != '\n');
+        buffer[pos] = 0;
+        // line is now in buffer
+        _allow_white_ip(buffer);
+      } while(c != EOF); 
+      fclose(f);           
+    }else{
+	debug(LOG_NOTICE, "Cannot find UUID file located at: %s", HOSTS_FILE_PATH);
         termination_handler(0);
-
-    while ((read = getline(&line, &len, hosts_file)) != -1) {
-        ip2 = "";
-        ip1 = hostname_to_ip(line);
-        while (strcmp(ip1, ip2) != 0){
-
-            ip2 = ip1;
-            if(ip1 != NULL && strlen(ip1) > 4){
-
-                iptables_do_command("-t nat -A " CHAIN_PREAUTHENTICATED " -p tcp --dport 443 -d %s -j ACCEPT", ip1);
-                iptables_do_command("-t filter -A " CHAIN_PREAUTHENTICATED " -p tcp --dport 443 -d %s -j ACCEPT", ip1);
-            }            
-            ip1 = hostname_to_ip(line);
-        }
     }
+    free(buffer);
 
-    fclose(hosts_file);
-    if (line){
-        free(line);
-    }
-    if (ip1){
-        free(ip1);
-    }
+
+
+
+
+
+
+    
 }
 
 
@@ -456,11 +483,12 @@ void
 wl_init(void) {
 
     s_config *config = config_get_config();
-
+	
     debug(LOG_NOTICE, "Initializing libcurl.");
     curl_global_init(CURL_GLOBAL_DEFAULT);
     
     debug(LOG_NOTICE, "Initializing wifiLazooo poller.");
+
     size_t i;
     wl_current_status = WL_STATUS_OK;
     wl_ap_token = NULL;

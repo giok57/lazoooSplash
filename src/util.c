@@ -56,6 +56,11 @@
 #include <net/if.h>
 #endif
 
+#include<sys/socket.h>
+#include<errno.h> //For errno - the error number
+#include<netdb.h> //hostent
+#include<arpa/inet.h>
+
 #include <string.h>
 #include <pthread.h>
 #include <netdb.h>
@@ -176,27 +181,52 @@ safe_sleep(int seconds){
 }
 
 
-char *
-hostname_to_ip(char * hostname) {
-	struct hostent *he;
-	struct in_addr **addr_list;
-	int i;
-		
-	if ( (he = gethostbyname( hostname ) ) == NULL) {
-		// get the host info
-		debug(LOG_DEBUG, "Cannot get ip from host: %s", hostname);
-		return NULL;
-	}
 
-	addr_list = (struct in_addr **) he->h_addr_list;
-	
-	for(i = 0; addr_list[i] != NULL; i++) {
-		//Return the first one;
-		return inet_ntoa(*addr_list[i]);
-	}
-	
-	return NULL;
+int hostname_to_ip(char * hostname , char* ip)
+{
+    struct hostent *he;
+    struct in_addr **addr_list;
+    int i;
+         
+    if ( (he = gethostbyname( hostname ) ) == NULL) 
+    {
+        // get the host info
+        herror("gethostbyname");
+        return 1;
+    }
+ 
+    addr_list = (struct in_addr **) he->h_addr_list;
+     
+    for(i = 0; addr_list[i] != NULL; i++) 
+    {
+        //Return the first one;
+
+        strcpy(ip , inet_ntoa(*addr_list[i]) );
+
+        return 0;
+    }
+     
+    return 1;
 }
+
+
+void
+condense_alpha_str(char *str) {
+  int source = 0; // index of copy source
+  int dest = 0; // index of copy destination
+
+  // loop until original end of str reached
+  while (str[source] != '\0') {
+    if (isalpha(str[source]) || str[source] == ':' || str[source] == '.' || str[source] == '/' ) {
+      // keep only chars matching isalpha()
+      str[dest] = str[source];
+      ++dest;
+    }
+    ++source; // advance source always, wether char was copied or not
+  }
+  str[dest] = '\0'; // add new terminating 0 byte, in case string got shorter
+}
+
 
 struct in_addr *
 wd_gethostbyname(const char *name) {
