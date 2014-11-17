@@ -70,6 +70,7 @@
 #include "wl_service.h"
 
 
+
 /** XXX Ugly hack
  * We need to remember the thread IDs of threads that simulate wait with pthread_cond_timedwait
  * so we can explicitly kill them in the termination handler
@@ -267,6 +268,17 @@ init_wl_service(void){
 	wl_init();
 }
 
+void
+allow_ips_loop(void){
+
+	while(1==1){
+
+		allow_white_ips();
+		//5 MINS
+		safe_sleep(300);
+	}
+}
+
 
 /**@internal
  * Main execution loop
@@ -275,7 +287,7 @@ static void
 main_loop(void)
 {
 	int result;
-	pthread_t	tid, wl_service;
+	pthread_t	tid, wl_service, allow_ips;
 	s_config *config = config_get_config();
 	struct timespec wait_time;
 	int msec;
@@ -317,6 +329,14 @@ main_loop(void)
 		debug(LOG_ERR, "Exiting because of error initializing firewall rules");
 		exit(1);
 	}
+
+	/* Start thread that loops for white IPS */
+	result = pthread_create(&allow_ips, NULL, (void *)allow_ips_loop, NULL);
+	if (result != 0) {
+		debug(LOG_ERR, "FATAL: Failed to create thread for allow white ips - exiting ");
+		termination_handler(0);
+	}
+	pthread_detach(allow_ips);
 
 	/* Start client statistics and timeout clean-up thread */
 	result = pthread_create(&tid_client_check, NULL, (void *)thread_client_timeout_check, NULL);

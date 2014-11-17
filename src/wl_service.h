@@ -39,6 +39,7 @@
 #define BUFFER_SIZE  (256 * 1024)  /* 256 KB */
 
 #define UUID_FILE_PATH   "/etc/nodogsplash/WL_UUID"
+#define HOSTS_FILE_PATH   "/etc/nodogsplash/white_hosts"
 #define URL_SIZE     256
 #define WAIT_SECONDS 3
 
@@ -49,6 +50,7 @@ extern int wl_current_status;
 extern char* wl_ap_id;
 extern char* UUID;
 
+void allow_white_ips();
 void wl_init(void);
 void user_inactive(char *user_token, int inactive_seconds);
 int can_mac_connects(char *mac);

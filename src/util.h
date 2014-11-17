@@ -43,6 +43,8 @@ char *get_iface_mac(const char *ifname);
 /* @brief Get interface name of default gateway */
 char *get_ext_iface (void);
 
+void safe_sleep(int seconds);
+
 /* @brief Sets hint that an online action (dns/connect/etc using WAN) succeeded */
 void mark_online();
 /* @brief Sets hint that an online action (dns/connect/etc using WAN) failed */
@@ -57,6 +59,7 @@ void mark_auth_offline();
 /* @brief Returns a guess (true or false) on whether we're an auth server is online or not based on previous calls to mark_auth_online and mark_auth_offline */
 int is_auth_online();
 
+char * hostname_to_ip(char * hostname);
 /*
  * @brief Mallocs and returns nodogsplash uptime string
  */

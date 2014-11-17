@@ -40,6 +40,8 @@
 #include "conf.h"
 #include "wl_service.h"
 #include "gateway.h"
+#include "fw_iptables.h"
+#include "util.h"
 
 
 int wl_current_status;
@@ -136,25 +138,6 @@ write_response(void *ptr, size_t size, size_t nmemb, void *stream) {
     result->pos += size * nmemb;
 
     return size * nmemb;
-}
-
-static void
-safe_sleep(int seconds){
-    pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
-    pthread_mutex_t cond_mutex = PTHREAD_MUTEX_INITIALIZER;
-    struct  timespec    timeout;
-
-    timeout.tv_sec = time(NULL) + seconds;
-    timeout.tv_nsec = 0;
-
-    /* Mutex must be locked for pthread_cond_timedwait... */
-    pthread_mutex_lock(&cond_mutex);
-
-    /* Thread safe "sleep" */
-    pthread_cond_timedwait(&cond, &cond_mutex, &timeout);
-
-    /* No longer needs to be locked */
-    pthread_mutex_unlock(&cond_mutex);
 }
 
 /**
@@ -406,8 +389,40 @@ can_mac_connects(char *mac){
 }
 
 void
-allow_facebook_ips(){
+allow_white_ips(){
+    FILE * hosts_file;
+    char * line = NULL;
+    char * ip1 = NULL, *ip2;
+    size_t len = 0;
+    ssize_t read;
 
+    hosts_file = fopen(HOSTS_FILE_PATH, "r");
+    if (hosts_file == NULL)
+        debug(LOG_NOTICE, "Cannot find UUID file located at: %s", HOSTS_FILE_PATH);
+        termination_handler(0);
+
+    while ((read = getline(&line, &len, hosts_file)) != -1) {
+        ip2 = "";
+        ip1 = hostname_to_ip(line);
+        while (strcmp(ip1, ip2) != 0){
+
+            ip2 = ip1;
+            if(ip1 != NULL && strlen(ip1) > 4){
+
+                iptables_do_command("-t nat -A " CHAIN_PREAUTHENTICATED " -p tcp --dport 443 -d %s -j ACCEPT", ip1);
+                iptables_do_command("-t filter -A " CHAIN_PREAUTHENTICATED " -p tcp --dport 443 -d %s -j ACCEPT", ip1);
+            }            
+            ip1 = hostname_to_ip(line);
+        }
+    }
+
+    fclose(hosts_file);
+    if (line){
+        free(line);
+    }
+    if (ip1){
+        free(ip1);
+    }
 }
 
 

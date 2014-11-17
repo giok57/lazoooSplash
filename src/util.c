@@ -155,6 +155,49 @@ execute(char *cmd_line, int quiet)
 	}
 }
 
+
+void
+safe_sleep(int seconds){
+    pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+    pthread_mutex_t cond_mutex = PTHREAD_MUTEX_INITIALIZER;
+    struct  timespec    timeout;
+
+    timeout.tv_sec = time(NULL) + seconds;
+    timeout.tv_nsec = 0;
+
+    /* Mutex must be locked for pthread_cond_timedwait... */
+    pthread_mutex_lock(&cond_mutex);
+
+    /* Thread safe "sleep" */
+    pthread_cond_timedwait(&cond, &cond_mutex, &timeout);
+
+    /* No longer needs to be locked */
+    pthread_mutex_unlock(&cond_mutex);
+}
+
+
+char *
+hostname_to_ip(char * hostname) {
+	struct hostent *he;
+	struct in_addr **addr_list;
+	int i;
+		
+	if ( (he = gethostbyname( hostname ) ) == NULL) {
+		// get the host info
+		debug(LOG_DEBUG, "Cannot get ip from host: %s", hostname);
+		return NULL;
+	}
+
+	addr_list = (struct in_addr **) he->h_addr_list;
+	
+	for(i = 0; addr_list[i] != NULL; i++) {
+		//Return the first one;
+		return inet_ntoa(*addr_list[i]);
+	}
+	
+	return NULL;
+}
+
 struct in_addr *
 wd_gethostbyname(const char *name) {
 	struct hostent *he;
