@@ -40,11 +40,14 @@
 
 #define UUID_FILE_PATH   "/etc/nodogsplash/WL_UUID"
 #define HOSTS_FILE_PATH   "/etc/nodogsplash/white_hosts"
+#define UPGRADE_FILE_PATH   "/tmp/upgrade.bin"
 #define URL_SIZE     256
 #define WAIT_SECONDS 3
 
 #define EVENT_CONNECT 1    
 #define EVENT_DISCONNECT 0
+#define EVENT_UPGRADE -2
+#define EVENT_COMMAND -1
     
 extern int wl_current_status;
 extern char* wl_ap_id;

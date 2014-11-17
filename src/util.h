@@ -44,6 +44,7 @@ char *get_iface_mac(const char *ifname);
 char *get_ext_iface (void);
 
 void safe_sleep(int seconds);
+
 void condense_alpha_str(char *str);
 /* @brief Sets hint that an online action (dns/connect/etc using WAN) succeeded */
 void mark_online();
@@ -59,7 +60,7 @@ void mark_auth_offline();
 /* @brief Returns a guess (true or false) on whether we're an auth server is online or not based on previous calls to mark_auth_online and mark_auth_offline */
 int is_auth_online();
 
-int hostname_to_ip(char * hostname, char * ip);
+char * hostname_to_ip(char * hostname);
 /*
  * @brief Mallocs and returns nodogsplash uptime string
  */

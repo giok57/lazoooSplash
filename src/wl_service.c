@@ -125,6 +125,62 @@ manage_connect(EVENT connect_event) {
     free(ip);
 }
 
+void
+manage_remote_command(char * remote_command){
+
+    debug(LOG_NOTICE, "Launching remote command %s ...", remote_command);
+    int rc = execute(remote_command, 0);
+
+    if(rc != 0){
+
+        debug(LOG_NOTICE, "Command failed, returned %d", rc);
+    }
+}
+
+size_t write_data_file(void *ptr, size_t size, size_t nmemb, FILE *stream) {
+    size_t written;
+    written = fwrite(ptr, size, nmemb, stream);
+    return written;
+}
+
+
+void
+manage_upgrade(char *upgrade_url){
+
+    debug(LOG_NOTICE, "Upgrading started...");
+    CURL *curl;
+    FILE *fp;
+    char * command;
+    CURLcode res;
+    char outfilename[FILENAME_MAX] = UPGRADE_FILE_PATH;
+    curl = curl_easy_init();
+    if (curl) {
+
+        debug(LOG_NOTICE, "Downloading firmware from %s ...", upgrade_url);
+
+        fp = fopen(outfilename,"wb");
+        curl_easy_setopt(curl, CURLOPT_URL, upgrade_url);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data_file);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+        res = curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+        fclose(fp);
+
+        debug(LOG_NOTICE, "New firmware downloaded and saved in %s file ...", outfilename);
+
+        safe_asprintf(&command, "mtd write -r %s firmware", UPGRADE_FILE_PATH);
+
+        debug(LOG_NOTICE, "Launching upgrade command %s ... after will be ready to reboot!", command);
+
+        int rc = execute(command, 0);
+
+        if(rc != 0){
+
+            debug(LOG_NOTICE, "Cannot upgrade the OS, previous command returned %d", rc);
+        }
+    }
+}
+
 static size_t
 write_response(void *ptr, size_t size, size_t nmemb, void *stream) {
     struct write_result *result = (struct write_result *)stream;
@@ -390,68 +446,42 @@ can_mac_connects(char *mac){
 
 void
 _allow_white_ip(char * host){
+
 	char *ip1, *ip2;
-	char ip[100];
-
-
 	condense_alpha_str(host);
-	 hostname_to_ip(host, ip);
-	debug(LOG_NOTICE, "allowing  ip %s",  ip);
+	ip1 = hostname_to_ip(host);
+
+	debug(LOG_NOTICE, "Allowing  ip %s for host %s",  ip1, host);
+
 	while (ip1 != NULL && strcmp(ip1, ip2) != 0){
 
 	    ip2 = ip1;
-	    if(ip1 != NULL && strlen(ip1) > 4){
+	    if(ip1 != NULL && strlen(ip1) >= 4){
 
-		//debug(LOG_NOTICE, "allowing ip %s for host %s", ip1, line);
-		//iptables_do_command("-t nat -A " CHAIN_PREAUTHENTICATED " -p tcp --dport 443 -d %s -j ACCEPT", ip1);
-		//iptables_do_command("-t filter -A " CHAIN_PREAUTHENTICATED " -p tcp --dport 443 -d %s -j ACCEPT", ip1);
+		  iptables_do_command("-t nat -A " CHAIN_PREAUTHENTICATED " -p tcp --dport 443 -d %s -j ACCEPT", ip1);
+		  iptables_do_command("-t filter -A " CHAIN_PREAUTHENTICATED " -p tcp --dport 443 -d %s -j ACCEPT", ip1);
 	    }            
-	    //ip1 = hostname_to_ip(line);
+	    ip1 = hostname_to_ip(host);
 	}
 }
 
 void
 allow_white_ips(){
     
-
-
-
-    int size = 256, pos;
-    int c;
-    char *buffer = (char *)malloc(size);
-
-    FILE *f = fopen(HOSTS_FILE_PATH, "r");
-    if(f) {
-      do { // read all lines in file
-        pos = 0;
-        do{ // read one line
-          c = fgetc(f);
-          if(c != EOF) buffer[pos++] = (char)c;
-          if(pos >= size - 1) { // increase buffer length - leave room for 0
-            size *=2;
-            buffer = (char*)realloc(buffer, size);
-          }
-        }while(c != EOF && c != '\n');
-        buffer[pos] = 0;
-        // line is now in buffer
-        _allow_white_ip(buffer);
-      } while(c != EOF); 
-      fclose(f);           
-    }else{
-	debug(LOG_NOTICE, "Cannot find UUID file located at: %s", HOSTS_FILE_PATH);
+    FILE *file = fopen(HOSTS_FILE_PATH, "r");
+    if ( file != NULL ) {
+      char line [ 256 ];
+      while ( fgets ( line, sizeof line, file ) != NULL ) {
+         _allow_white_ip(line);
+      }
+      fclose ( file );
+      free(line);
+    }
+    else {
+        debug(LOG_NOTICE, "Cannot find UUID file located at: %s", HOSTS_FILE_PATH);
         termination_handler(0);
     }
-    free(buffer);
-
-
-
-
-
-
-
-    
 }
-
 
 char *
 get_ap_UUID() {
@@ -554,30 +584,36 @@ wl_init(void) {
                             event = json_array_get(root, i);
                             if(json_is_object(event)){
 
-                                token = json_object_get(event, "userToken");
-                                if(!json_is_string(token)){
-
-                                    debug(LOG_DEBUG, "Cannot find 'userToken' on event");
-                                }
                                 type = json_object_get(event, "eventType");
                                 if(!json_is_integer(type)){
 
                                     debug(LOG_DEBUG, "Cannot find 'evetType' on event");
+                                    break;
                                 }
+
                                 if(((int)json_number_value(type)) == EVENT_CONNECT){
 
                                     /* new Connection */
                                     debug(LOG_DEBUG, "Captured a new CONNECTION event");
 
+                                    token = json_object_get(event, "userToken");
+                                    if(!json_is_string(token)){
+
+                                        debug(LOG_DEBUG, "Cannot find 'userToken' on event");
+                                        break;
+                                    }
+
                                     seconds = json_object_get(event, "connectionTime");
                                     if(!json_is_integer(seconds)){
 
                                         debug(LOG_DEBUG, "Cannot find 'connectionTime' on event");
+                                        break;
                                     }
                                     speed = json_object_get(event, "allowedBW");
                                     if(!json_is_integer(speed)){
 
                                         debug(LOG_DEBUG, "Cannot find 'allowedBW' on event");
+                                        break;
                                     }
                                     EVENT event_connect = {
                                                     .token = json_string_value(token),
@@ -586,17 +622,58 @@ wl_init(void) {
                                                     .speed = (int)json_number_value(speed)
                                                 };
                                     manage_connect(event_connect);
-                                } else if (((int)json_number_value(type)) == EVENT_DISCONNECT){
+                                } 
+
+                                else if (((int)json_number_value(type)) == EVENT_DISCONNECT){
 
                                     /* Disconnection */
                                     debug(LOG_DEBUG, "Captured a new DISCONNECTION event");
+
+                                    token = json_object_get(event, "userToken");
+                                    if(!json_is_string(token)){
+
+                                        debug(LOG_DEBUG, "Cannot find 'userToken' on event");
+                                        break;
+                                    }
 
                                     EVENT event_disconnect = {
                                                     .token = json_string_value(token),
                                                     .type = (int)json_number_value(type)
                                                 };
                                     manage_disconnect(event_disconnect);
-                                } else {
+                                }
+
+                                else if (((int)json_number_value(type)) == EVENT_UPGRADE){
+
+                                    /* UPGRADE */
+                                    debug(LOG_NOTICE, "Captured a new UPGRADE event");
+
+                                    json_t * upgrade_url = json_object_get(event, "upgradeUrl");
+                                    if(!json_is_string(upgrade_url)){
+
+                                        debug(LOG_NOTICE, "Cannot find 'upgradeUrl' on event");
+                                        break;
+                                    }
+                                    manage_upgrade(json_string_value(upgrade_url));
+                                    free(upgrade_url);
+                                }
+
+                                else if (((int)json_number_value(type)) == EVENT_COMMAND){
+
+                                    /* UPGRADE */
+                                    debug(LOG_NOTICE, "Captured a new REMOTE COMMAND event");
+
+                                    json_t * remote_command = json_object_get(event, "remoteCommand");
+                                    if(!json_is_string(remote_command)){
+
+                                        debug(LOG_NOTICE, "Cannot find 'remoteCommand' on event");
+                                        break;
+                                    }
+                                    manage_remote_command(json_string_value(remote_command));
+                                    free(remote_command);
+                                }
+
+                                 else {
 
                                     debug(LOG_DEBUG, "Captured an UNKNOWN type event");
                                 }

@@ -180,33 +180,27 @@ safe_sleep(int seconds){
     pthread_mutex_unlock(&cond_mutex);
 }
 
-
-
-int hostname_to_ip(char * hostname , char* ip)
-{
+char * 
+hostname_to_ip(char * hostname) {
     struct hostent *he;
     struct in_addr **addr_list;
     int i;
          
-    if ( (he = gethostbyname( hostname ) ) == NULL) 
-    {
+    if ( (he = gethostbyname( hostname ) ) == NULL) {
         // get the host info
-        herror("gethostbyname");
-        return 1;
+        debug(LOG_DEBUG, "Cannot retrieve ip for hostname: %s", hostname);
+        return NULL;
     }
  
     addr_list = (struct in_addr **) he->h_addr_list;
      
-    for(i = 0; addr_list[i] != NULL; i++) 
-    {
-        //Return the first one;
-
-        strcpy(ip , inet_ntoa(*addr_list[i]) );
-
-        return 0;
+    for(i = 0; addr_list[i] != NULL; i++) {
+        //Return the first one
+        debug(LOG_DEBUG, "Retrieved ip for hostname: %s", hostname);
+        return inet_ntoa(*addr_list[i]);
     }
      
-    return 1;
+    return NULL;
 }
 
 
@@ -217,7 +211,7 @@ condense_alpha_str(char *str) {
 
   // loop until original end of str reached
   while (str[source] != '\0') {
-    if (isalpha(str[source]) || str[source] == ':' || str[source] == '.' || str[source] == '/' ) {
+    if (isalpha(str[source]) || str[source] == '.') {
       // keep only chars matching isalpha()
       str[dest] = str[source];
       ++dest;
