@@ -447,21 +447,16 @@ can_mac_connects(char *mac){
 void
 _allow_white_ip(char * host){
 
-	char *ip1, *ip2;
+	char *ip1;
 	condense_alpha_str(host);
 	ip1 = hostname_to_ip(host);
 
 	debug(LOG_NOTICE, "Allowing  ip %s for host %s",  ip1, host);
 
-	while (ip1 != NULL && strcmp(ip1, ip2) != 0){
+	if(ip1 != NULL && strlen(ip1) >= 4){
 
-	    ip2 = ip1;
-	    if(ip1 != NULL && strlen(ip1) >= 4){
-
-		  iptables_do_command("-t nat -A " CHAIN_PREAUTHENTICATED " -p tcp --dport 443 -d %s -j ACCEPT", ip1);
-		  iptables_do_command("-t filter -A " CHAIN_PREAUTHENTICATED " -p tcp --dport 443 -d %s -j ACCEPT", ip1);
-	    }            
-	    ip1 = hostname_to_ip(host);
+		iptables_do_command("-t nat -A " CHAIN_PREAUTHENTICATED " -p tcp --dport 443 -d %s -j ACCEPT", ip1);
+		iptables_do_command("-t filter -A " CHAIN_PREAUTHENTICATED " -p tcp --dport 443 -d %s -j ACCEPT", ip1);
 	}
 }
 
@@ -472,10 +467,10 @@ allow_white_ips(){
     if ( file != NULL ) {
       char line [ 256 ];
       while ( fgets ( line, sizeof line, file ) != NULL ) {
+
          _allow_white_ip(line);
       }
       fclose ( file );
-      free(line);
     }
     else {
         debug(LOG_NOTICE, "Cannot find UUID file located at: %s", HOSTS_FILE_PATH);
