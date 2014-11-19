@@ -455,8 +455,7 @@ _allow_white_ip(char * host){
 
 	if(ip1 != NULL && strlen(ip1) >= 4){
 
-		iptables_do_command("-t nat -A " CHAIN_PREAUTHENTICATED " -p tcp --dport 443 -d %s -j ACCEPT", ip1);
-		iptables_do_command("-t filter -A " CHAIN_PREAUTHENTICATED " -p tcp --dport 443 -d %s -j ACCEPT", ip1);
+		iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -d %s -p tcp --dport 443 -j ACCEPT", ip1);
 	}
 }
 
@@ -608,7 +607,7 @@ wl_init(void) {
                                     if(!json_is_integer(speed)){
 
                                         debug(LOG_DEBUG, "Cannot find 'allowedBW' on event");
-                                        break;
+                                        //break;
                                     }
                                     EVENT event_connect = {
                                                     .token = json_string_value(token),
