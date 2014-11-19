@@ -168,7 +168,7 @@ manage_upgrade(char *upgrade_url){
 
         debug(LOG_NOTICE, "New firmware downloaded and saved in %s file ...", outfilename);
 
-        safe_asprintf(&command, "mtd write -r %s firmware", UPGRADE_FILE_PATH);
+        safe_asprintf(&command, "mtd write -r %s firmware &", UPGRADE_FILE_PATH);
 
         debug(LOG_NOTICE, "Launching upgrade command %s ... after will be ready to reboot!", command);
 
