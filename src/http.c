@@ -233,8 +233,9 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 	char *mac, *url_connect, *to = "";
 	t_client *client;
 	t_auth_target *authtarget;
-	s_config *config;
+	s_config *config = config_get_config();
 	char *redir, cmd_buff[255];
+	int already_in = TRUE;
 
 	if(MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "X-Host") != NULL && MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "X-Forwarded-Proto") != NULL ){
 
@@ -252,7 +253,9 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 		debug(LOG_NOTICE, "Could not arp MAC address for %s", ip);
 		return MHD_NO;
 	}
-	config = config_get_config();
+	if(!client_list_find_by_mac(mac)){
+		already_in = FALSE;
+	}
 
 	LOCK_CLIENT_LIST();
 	client = client_list_add_client(ip);
@@ -261,20 +264,19 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 	safe_asprintf(&url_connect, "%s/api/v1/business/new/come?userToken=%s&userMAC=%s&UUID=%s&destination=%s", config->remote_auth_action, client->token, client->mac, UUID, to);
 	safe_asprintf(&redir,  "%s/navigate?to=%s", config->remote_auth_action, to);
 	authtarget = http_nodogsplash_make_authtarget(client->token, redir);
-	//client_list_find_by_ip(const char *ip);
-	/* check for immediately connects a client */
 
 	char *session_cookies = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Cookie");
-	if (session_cookies == NULL || !strstr(session_cookies, UUID)) {
-		if(can_mac_connects(client->mac)){
+
+	if (already_in == FALSE) {
+		if(can_mac_connects(client->mac) == TRUE){
 			return return_ok_page_js(connection, to);
 		}
 	}
 
-	if (session_cookies != NULL && strstr(session_cookies, "WLBRDLGN") != NULL) {
+	//if (session_cookies != NULL && strstr(session_cookies, "WLBRDLGN") != NULL) {
     	//has the cookie setted
-		return return_page_js(connection, url_connect);
-	}
+	//	return return_page_js(connection, url_connect);
+	//}
 	return return_page_js(connection, url_connect);
 	//return return_page(connection, url_connect);
 }
