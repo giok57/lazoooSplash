@@ -179,7 +179,7 @@ static int return_ok_page_js (struct MHD_Connection *connection, char *url) {
 	struct MHD_Response *response;
 	const char *page;
 	debug(LOG_DEBUG, "Redirecting with success JS to %s", url);
-	safe_asprintf(&page,  "<html><head><title>Success</title><script type='text/javascript'>window.location.href='%s'</script></head><body>Success</body></html>", url, url);
+	safe_asprintf(&page,  "<html><head><title>Success</title></head><body>Success</body></html>");
 	response = MHD_create_response_from_buffer (strlen (page), (void *) page, MHD_RESPMEM_PERSISTENT);
 	if (!response)
 		return MHD_NO;
@@ -227,6 +227,12 @@ int on_client_connect (void *cls, const struct sockaddr *addr, socklen_t addrlen
 
 	return MHD_YES;	
 }
+int print_out_key (void *cls, enum MHD_ValueKind kind, 
+                   const char *key, const char *value)
+{
+  debug(LOG_DEBUG, "Captured header %s %s", key, value);
+  return MHD_YES;
+}
 
 int answer_to_connection (void *cls, struct MHD_Connection *connection,
                       const char *url, const char *method,
@@ -259,7 +265,7 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 	if(!client_list_find_by_mac(mac)){
 		already_in = FALSE;
 	}
-
+MHD_get_connection_values (connection, MHD_HEADER_KIND, &print_out_key, NULL);
 	LOCK_CLIENT_LIST();
 	client = client_list_add_client(ip);
 	UNLOCK_CLIENT_LIST();
@@ -280,7 +286,7 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
     	//has the cookie setted
 	//	return return_page_js(connection, url_connect);
 	//}
-	return return_page(connection, url_connect);
+	return return_ok_page_js(connection, url_connect);
 	//return return_page(connection, url_connect);
 }
 
