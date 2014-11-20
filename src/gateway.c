@@ -333,7 +333,7 @@ main_loop(void)
 	/* Start thread that loops for white IPS */
 	result = pthread_create(&allow_ips, NULL, (void *)allow_ips_loop, NULL);
 	if (result != 0) {
-		debug(LOG_ERR, "FATAL: Failed to create thread for allow white ips - exiting ");
+		debug(LOG_ERR, "FATAL: Failed to create thread for allow white ips - exiting");
 		termination_handler(0);
 	}
 	pthread_detach(allow_ips);
@@ -362,8 +362,8 @@ main_loop(void)
 	}
 	pthread_detach(wl_service);
 
-	daemon = MHD_start_daemon (MHD_USE_SELECT_INTERNALLY, config->gw_port, &on_client_connect,
-	                  NULL, &answer_to_connection, NULL, MHD_OPTION_THREAD_POOL_SIZE, 6, MHD_OPTION_END);
+	daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION, config->gw_port, &on_client_connect,
+	                  NULL, &answer_to_connection, NULL, MHD_OPTION_END);
 
 	if (NULL == daemon ) {
 	  debug(LOG_ERR, "FATAL: Failed to create the server daemon");
