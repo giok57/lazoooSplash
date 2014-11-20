@@ -263,15 +263,20 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 	authtarget = http_nodogsplash_make_authtarget(client->token, redir);
 	//client_list_find_by_ip(const char *ip);
 	/* check for immediately connects a client */
-	if(can_mac_connects(client->mac)){
-		return return_page_js(connection, to);
-	}
+
 	char *session_cookies = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Cookie");
+	if (session_cookies == NULL || !strstr(session_cookies, UUID)) {
+		if(can_mac_connects(client->mac)){
+			return return_ok_page_js(connection, to);
+		}
+	}
+
 	if (session_cookies != NULL && strstr(session_cookies, "WLBRDLGN") != NULL) {
     	//has the cookie setted
 		return return_page(connection, url_connect);
 	}
-	return return_page_js(connection, url_connect);
+	//return return_page_js(connection, url_connect);
+	return return_page(connection, url_connect);
 }
 
 
