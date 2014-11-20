@@ -178,6 +178,7 @@ static int return_ok_page_js (struct MHD_Connection *connection, char *url) {
 	int ret;
 	struct MHD_Response *response;
 	const char *page;
+	debug(LOG_DEBUG, "Redirecting with success JS to %s", url);
 	safe_asprintf(&page,  "<html><head><title>Success</title><script type='text/javascript'>window.location.href='%s'</script></head><body>Success</body></html>", url, url);
 	response = MHD_create_response_from_buffer (strlen (page), (void *) page, MHD_RESPMEM_PERSISTENT);
 	if (!response)
@@ -193,6 +194,7 @@ static int return_page_js (struct MHD_Connection *connection, char *url) {
 	int ret;
 	struct MHD_Response *response;
 	const char *page;
+	debug(LOG_DEBUG, "Redirecting with JS to %s", url);
 	safe_asprintf(&page,  "<html><head><script type='text/javascript'>window.location.href='%s'</script></head><body><a href='%s'>connect @wifiLazooo now</a></body></html>", url, url);
 	response = MHD_create_response_from_buffer (strlen (page), (void *) page, MHD_RESPMEM_PERSISTENT);
 	if (!response)
@@ -208,6 +210,7 @@ static int return_page (struct MHD_Connection *connection, char *url) {
 	int ret;
 	struct MHD_Response *response;
 	const char *page;
+	debug(LOG_DEBUG, "Redirecting with 301 to %s", url);
 	safe_asprintf(&page,  "<html><body>Redirecting to %s.</body></html>", url);
 	response = MHD_create_response_from_buffer (strlen (page), (void *) page, MHD_RESPMEM_PERSISTENT);
 	if (!response)
@@ -264,7 +267,7 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 	safe_asprintf(&url_connect, "%s/api/v1/business/new/come?userToken=%s&userMAC=%s&UUID=%s&destination=%s", config->remote_auth_action, client->token, client->mac, UUID, to);
 	safe_asprintf(&redir,  "%s/navigate?to=%s", config->remote_auth_action, to);
 	authtarget = http_nodogsplash_make_authtarget(client->token, redir);
-
+	debug(LOG_DEBUG, "Captured request for %s", to);
 	char *session_cookies = MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "Cookie");
 
 	if (already_in == FALSE) {
@@ -277,7 +280,7 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
     	//has the cookie setted
 	//	return return_page_js(connection, url_connect);
 	//}
-	return return_page_js(connection, url_connect);
+	return return_page(connection, url_connect);
 	//return return_page(connection, url_connect);
 }
 
