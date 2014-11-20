@@ -273,10 +273,10 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 
 	if (session_cookies != NULL && strstr(session_cookies, "WLBRDLGN") != NULL) {
     	//has the cookie setted
-		return return_page(connection, url_connect);
+		return return_page_js(connection, url_connect);
 	}
-	//return return_page_js(connection, url_connect);
-	return return_page(connection, url_connect);
+	return return_page_js(connection, url_connect);
+	//return return_page(connection, url_connect);
 }
 
 
