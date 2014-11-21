@@ -211,7 +211,7 @@ condense_alpha_str(char *str) {
 
   // loop until original end of str reached
   while (str[source] != '\0') {
-    if (isalpha(str[source]) || str[source] == '.' || str[source] == '-') {
+    if (isalpha(str[source]) || str[source] == '.' || str[source] == '-' || str[source] == '0' || str[source] == '1' || str[source] == '2' || str[source] == '3' || str[source] == '4' || str[source] == '5' || str[source] == '6' || str[source] == '7' || str[source] == '8' || str[source] == '9') {
       // keep only chars matching isalpha()
       str[dest] = str[source];
       ++dest;
