@@ -187,11 +187,11 @@ fw_refresh_client_list(void)
 					  cp1->counters.incoming/1000, cp1->counters.outgoing/1000);
 				if(cp1->fw_connection_state == FW_MARK_AUTHENTICATED) {
 
-					UNLOCK_CLIENT_LIST();
-					/* Inform wifiLazooo service that the current user is inactive */
-					//user_inactive(cp1->mac, (config->checkinterval * config->clienttimeout));
-
 					LOCK_CLIENT_LIST();
+					/* Inform wifiLazooo service that the current user is inactive */
+					user_inactive(cp1->mac, (config->checkinterval * config->clienttimeout));
+
+					UNLOCK_CLIENT_LIST();
 					/* Deauth */
 					iptables_fw_access(AUTH_MAKE_DEAUTHENTICATED, cp1);
 				}
