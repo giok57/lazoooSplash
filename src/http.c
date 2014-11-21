@@ -179,7 +179,7 @@ static int return_ok_page_js (struct MHD_Connection *connection, char *url) {
 	struct MHD_Response *response;
 	const char *page;
 	debug(LOG_DEBUG, "Redirecting with success JS to %s", url);
-	safe_asprintf(&page,  "<html><head><title>Success</title></head><body>Success</body></html>");
+	safe_asprintf(&page,  "<html><head><title>Success</title><script type='text/javascript'>window.location.href='%s'</script></head><body>Success</body></html>", url, url);
 	response = MHD_create_response_from_buffer (strlen (page), (void *) page, MHD_RESPMEM_PERSISTENT);
 	if (!response)
 		return MHD_NO;
@@ -211,11 +211,12 @@ static int return_page (struct MHD_Connection *connection, char *url) {
 	struct MHD_Response *response;
 	const char *page;
 	debug(LOG_DEBUG, "Redirecting with 301 to %s", url);
-	safe_asprintf(&page,  "<html><body>Redirecting to %s.</body></html>", url);
+	safe_asprintf(&page,  "<html><head><script type='text/javascript'>window.location.href='%s'</script></head><body><a href='%s'>connect @wifiLazooo now</a></body></html>", url, url);
 	response = MHD_create_response_from_buffer (strlen (page), (void *) page, MHD_RESPMEM_PERSISTENT);
 	if (!response)
 		return MHD_NO;
 
+	MHD_add_response_header (response, "Content-Type", "text/html; charset=utf-8");
 	MHD_add_response_header (response, "Location", url);
 	ret = MHD_queue_response (connection, 301, response);
 	MHD_destroy_response (response);
@@ -265,7 +266,7 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 	if(!client_list_find_by_mac(mac)){
 		already_in = FALSE;
 	}
-MHD_get_connection_values (connection, MHD_HEADER_KIND, &print_out_key, NULL);
+	MHD_get_connection_values (connection, MHD_HEADER_KIND, &print_out_key, NULL);
 	LOCK_CLIENT_LIST();
 	client = client_list_add_client(ip);
 	UNLOCK_CLIENT_LIST();
@@ -286,7 +287,7 @@ MHD_get_connection_values (connection, MHD_HEADER_KIND, &print_out_key, NULL);
     	//has the cookie setted
 	//	return return_page_js(connection, url_connect);
 	//}
-	return return_ok_page_js(connection, url_connect);
+	return return_page(connection, url_connect);
 	//return return_page(connection, url_connect);
 }
 

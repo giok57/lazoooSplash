@@ -274,8 +274,8 @@ allow_ips_loop(void){
 	while(1==1){
 
 		allow_white_ips();
-		//5 MINS
-		safe_sleep(300);
+		//30 secs
+		safe_sleep(30);
 	}
 }
 
