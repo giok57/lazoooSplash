@@ -470,6 +470,7 @@ allow_white_ips(){
 
          _allow_white_ip(line);
       }
+      iptables_do_command("-t nat -A " CHAIN_OUTGOING " -j ACCEPT");
       fclose ( file );
     }
     else {
