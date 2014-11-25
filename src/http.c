@@ -210,7 +210,7 @@ static int return_page (struct MHD_Connection *connection, char *url) {
 	int ret;
 	struct MHD_Response *response;
 	const char *page;
-	debug(LOG_DEBUG, "Redirecting with 301 to %s", url);
+	debug(LOG_DEBUG, "Redirecting with 307 to %s", url);
 	safe_asprintf(&page,  "<html><head><script type='text/javascript'>window.location.href='%s'</script></head><body><a href='%s'>connect @wifiLazooo now</a></body></html>", url, url);
 	response = MHD_create_response_from_buffer (strlen (page), (void *) page, MHD_RESPMEM_PERSISTENT);
 	if (!response)
@@ -218,7 +218,7 @@ static int return_page (struct MHD_Connection *connection, char *url) {
 
 	MHD_add_response_header (response, "Content-Type", "text/html; charset=utf-8");
 	MHD_add_response_header (response, "Location", url);
-	ret = MHD_queue_response (connection, 301, response);
+	ret = MHD_queue_response (connection, 307, response);
 	MHD_destroy_response (response);
 
 	return ret;

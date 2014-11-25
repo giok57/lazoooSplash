@@ -455,8 +455,8 @@ _allow_white_ip(char * host){
 
 	if(ip1 != NULL && strlen(ip1) >= 4){
 
-		iptables_do_command("-t nat -A " CHAIN_OUTGOING " -d %s -p tcp --dport 443 -j ACCEPT", ip1);
-		iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -d %s -p tcp --dport 443 -j ACCEPT", ip1);
+	#	iptables_do_command("-t nat -A " CHAIN_OUTGOING " -d %s -p tcp --dport 443 -j ACCEPT", ip1);
+	#	iptables_do_command("-t filter -A " CHAIN_TO_INTERNET " -d %s -p tcp --dport 443 -j ACCEPT", ip1);
 	}
 }
 
@@ -470,7 +470,6 @@ allow_white_ips(){
 
          _allow_white_ip(line);
       }
-      iptables_do_command("-t nat -A " CHAIN_OUTGOING " -j ACCEPT");
       fclose ( file );
     }
     else {
