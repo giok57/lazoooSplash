@@ -431,7 +431,7 @@ iptables_fw_init(void)
 	rc |= _iptables_append_ruleset("nat", "preauthenticated-users", CHAIN_OUTGOING);
 
 	/* CHAIN_OUTGOING, packets for tcp port 80, redirect to gw_port on primary address for the iface */
-	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j DNAT --to-destination %s:%d", gw_address, 2050);
+	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 80 -j DNAT --to-destination %s:%d", gw_address, 8888);
 	//rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -p tcp --dport 443 -j DNAT --to-destination %s:%d", gw_address, 8443);
 	/* CHAIN_OUTGOING, other packets  ACCEPT */
 	rc |= iptables_do_command("-t nat -A " CHAIN_OUTGOING " -j ACCEPT");
