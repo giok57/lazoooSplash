@@ -413,7 +413,7 @@ can_mac_connects(char *mac){
     safe_asprintf(&url, "%s/api/v1/business/from/ap/%s/user/mac/%s/cannavigate", config->remote_auth_action, UUID, mac);
     curl_easy_setopt(curl, CURLOPT_URL, url);
     /* put a two seconds timeout */
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 2);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 4);
 
     /* pass a User-Agent header to wifiLazooo service */
     headers = curl_slist_append(headers, "User-Agent: wifiLazooo-router-cannavigate");
@@ -437,10 +437,14 @@ can_mac_connects(char *mac){
         debug(LOG_DEBUG, "During the cannavigate request made at: %s, server returned code: %d", url, code);
         return FALSE;
     }
-    free(url);
-    curl_easy_cleanup(curl);
-    curl_slist_free_all(headers);
-    free(data);
+     if(url)
+        free(url);
+    if(data)
+        free(data);
+    if(curl)
+        curl_easy_cleanup(curl);
+    if(headers)
+        curl_slist_free_all(headers);
     return TRUE;
 }
 
