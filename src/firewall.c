@@ -189,7 +189,7 @@ fw_refresh_client_list(void)
 
 					LOCK_CLIENT_LIST();
 					/* Inform wifiLazooo service that the current user is inactive */
-					user_inactive(cp1->mac, (config->checkinterval * config->clienttimeout));
+					//user_inactive(cp1->mac, (config->checkinterval * config->clienttimeout));
 
 					UNLOCK_CLIENT_LIST();
 					/* Deauth */
