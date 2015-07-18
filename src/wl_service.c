@@ -535,7 +535,7 @@ wl_init(void) {
 
     while(1) {
 
-        if(wl_ap_token == NULL || last_req_code  != 200) {
+        if(wl_ap_token == NULL || (last_req_code  != 200 && last_req_code<500)) {
 		
             safe_asprintf(&url_register, "%s/api/v1/business/from/ap/%s/register", config->remote_auth_action, UUID);
             wl_ap_token = NULL;
