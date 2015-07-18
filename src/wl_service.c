@@ -322,7 +322,7 @@ wl_request(const char *url) {
     };
 
     curl_easy_setopt(curl, CURLOPT_URL, url);
-
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 120L);
     /* pass a User-Agent header to wifiLazooo service */
     headers = curl_slist_append(headers, "User-Agent: wifiLazooo-router");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -335,7 +335,10 @@ wl_request(const char *url) {
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &write_result);
 
     status = curl_easy_perform(curl);
-    if(status != 0){
+    if(status == CURLE_OPERATION_TIMEDOUT){
+    	debug(LOG_DEBUG, "Timeout reached during the request made at: %s", url);
+        goto error;
+    }else if(status != CURLE_OK){
         debug(LOG_DEBUG, "Unable to contact wifiLazooo during the request made at: %s", url);
         wl_offline();
         goto error;
