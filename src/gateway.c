@@ -366,12 +366,12 @@ main_loop(void)
 	//daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION, config->gw_port, &on_client_connect,
 	//                  NULL, &answer_to_connection, NULL, MHD_OPTION_END);
 	daemon = MHD_start_daemon(
-						 MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY,
+						 MHD_USE_THREAD_PER_CONNECTION,
 						 config->gw_port,
 						 NULL, NULL,
 						 &answer_to_connection, NULL,
 						 MHD_OPTION_CONNECTION_TIMEOUT, (unsigned int) 10,
-						 MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
+						// MHD_OPTION_LISTENING_ADDRESS_REUSE, 1,
 						 MHD_OPTION_END);
 	if (NULL == daemon ) {
 	  debug(LOG_ERR, "FATAL: Failed to create the server daemon");
