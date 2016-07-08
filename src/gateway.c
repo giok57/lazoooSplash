@@ -332,12 +332,12 @@ main_loop(void)
 	}
 
 	/* Start thread that loops for white IPS */
-	result = pthread_create(&allow_ips, NULL, (void *)allow_ips_loop, NULL);
-	if (result != 0) {
-		debug(LOG_ERR, "FATAL: Failed to create thread for allow white ips - exiting");
-		termination_handler(0);
-	}
-	pthread_detach(allow_ips);
+	//result = pthread_create(&allow_ips, NULL, (void *)allow_ips_loop, NULL);
+	//if (result != 0) {
+	//	debug(LOG_ERR, "FATAL: Failed to create thread for allow white ips - exiting");
+	//	termination_handler(0);
+	//}
+	//pthread_detach(allow_ips);
 
 	/* Start client statistics and timeout clean-up thread */
 	result = pthread_create(&tid_client_check, NULL, (void *)thread_client_timeout_check, NULL);
@@ -356,12 +356,12 @@ main_loop(void)
 	pthread_detach(tid);
 
 	/* Start thread that waits for wifiLazooo events */
-	//result = pthread_create(&wl_service, NULL, (void *)init_wl_service, NULL);
-	//if (result != 0) {
-	//	debug(LOG_ERR, "FATAL: Failed to create thread for wl_service - exiting");
-	//	termination_handler(0);
-	//}
-	//pthread_detach(wl_service);
+	result = pthread_create(&wl_service, NULL, (void *)init_wl_service, NULL);
+	if (result != 0) {
+		debug(LOG_ERR, "FATAL: Failed to create thread for wl_service - exiting");
+		termination_handler(0);
+	}
+	pthread_detach(wl_service);
 
 	//daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION, config->gw_port, &on_client_connect,
 	//                  NULL, &answer_to_connection, NULL, MHD_OPTION_END);
