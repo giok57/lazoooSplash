@@ -366,8 +366,8 @@ main_loop(void)
 	//daemon = MHD_start_daemon (MHD_USE_THREAD_PER_CONNECTION, config->gw_port, &on_client_connect,
 	//                  NULL, &answer_to_connection, NULL, MHD_OPTION_END);
 	daemon = MHD_start_daemon(
-						MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY,
-						// MHD_USE_THREAD_PER_CONNECTION,
+						//MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY,
+						 MHD_USE_THREAD_PER_CONNECTION,
 						 config->gw_port,
 						 NULL, NULL,
 						 &answer_to_connection, NULL,
