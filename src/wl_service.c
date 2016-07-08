@@ -542,7 +542,7 @@ wl_init(void) {
             debug(LOG_NOTICE, "Making a request to wifilazooo api for the ap registration.");
             text = wl_request(url_register);
             if (text != NULL) {
-
+		debug(LOG_DEBUG, "text returned by wifilazooo registration is not null: %s", text);
                 root = json_loads(text, 0, &error);
                 free(text);
                 if(!root) {
@@ -561,6 +561,9 @@ wl_init(void) {
                             safe_sleep(WAIT_SECONDS);
                         }
                     }
+                }
+                if(root) {
+                	json_decref(root);
                 }
             }else{
                 debug(LOG_DEBUG, "WifiLazooo AP registration returns no value.");
@@ -682,6 +685,9 @@ wl_init(void) {
                             }
                         }
                     }
+                }
+                if(root) {
+                	json_decref(root);
                 }
             }
             else{
