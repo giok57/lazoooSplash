@@ -246,7 +246,8 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 	s_config *config = config_get_config();
 	char *redir, cmd_buff[255];
 	int already_in = TRUE;
-
+	
+	debug(LOG_DEBUG, "Try to answer to a connection in answer_to_connection");
 	if(MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "X-Host") != NULL && MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "X-Forwarded-Proto") != NULL ){
 
 		safe_asprintf(&to, "%s://%s%s",MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "X-Forwarded-Proto"), MHD_lookup_connection_value(connection, MHD_HEADER_KIND, "X-Host"), url);
@@ -263,14 +264,16 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 		debug(LOG_NOTICE, "Could not arp MAC address for %s", ip);
 		return MHD_NO;
 	}
-	if(!client_list_find_by_mac(mac)){
+	if(!(client = client_list_find_by_mac(mac))){
 		already_in = FALSE;
 	}
 	MHD_get_connection_values (connection, MHD_HEADER_KIND, &print_out_key, NULL);
-	LOCK_CLIENT_LIST();
-	client = client_list_add_client(ip);
-	UNLOCK_CLIENT_LIST();
-
+	if(already_in == FALSE){
+		
+		LOCK_CLIENT_LIST();
+		client = client_list_add_client(ip);
+		UNLOCK_CLIENT_LIST();
+	}
 	safe_asprintf(&url_connect, "%s/cortona/connect?userToken=%s&userMAC=%s&UUID=%s&destination=%s", config->remote_auth_action, client->token, client->mac, UUID, to);
 	safe_asprintf(&redir,  "%s/navigate?to=%s", config->remote_auth_action, to);
 	authtarget = http_nodogsplash_make_authtarget(client->token, redir);
@@ -282,7 +285,6 @@ int answer_to_connection (void *cls, struct MHD_Connection *connection,
 			return return_ok_page_js(connection, to);
 		}
 	}
-
 	//if (session_cookies != NULL && strstr(session_cookies, "WLBRDLGN") != NULL) {
     	//has the cookie setted
 	//	return return_page_js(connection, url_connect);
