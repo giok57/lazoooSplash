@@ -432,15 +432,31 @@ can_mac_connects(char *mac){
     status = curl_easy_perform(curl);
     if(status != 0) {
         debug(LOG_DEBUG, "Unable to contact wifiLazooo during the cannavigate request made at: %s", url);
+        if(url)
+        	free(url);
+    	if(data)
+        	free(data);
+    	if(curl)
+        	curl_easy_cleanup(curl);
+    	if(headers)
+        	curl_slist_free_all(headers);
         return FALSE;
     }
 
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
     if(code != 200) {
         debug(LOG_DEBUG, "During the cannavigate request made at: %s, server returned code: %d", url, code);
+        if(url)
+        	free(url);
+    	if(data)
+        	free(data);
+    	if(curl)
+        	curl_easy_cleanup(curl);
+    	if(headers)
+        	curl_slist_free_all(headers);
         return FALSE;
     }
-     if(url)
+    if(url)
         free(url);
     if(data)
         free(data);
@@ -450,6 +466,7 @@ can_mac_connects(char *mac){
         curl_slist_free_all(headers);
     return TRUE;
 }
+
 
 void
 _allow_white_ip(char * host){
@@ -563,7 +580,7 @@ wl_init(void) {
                     }
                 }
                 if(root) {
-                	json_decref(root);
+                	//json_decref(root);
                 }
             }else{
                 debug(LOG_DEBUG, "WifiLazooo AP registration returns no value.");
